@@ -70,26 +70,59 @@ function AddPlant() {
     if (galleryInputRef.current) galleryInputRef.current.value = "";
   };
 
+  const dataUrlToBlob = (dataUrl: string): Blob => {
+    const [header, base64] = dataUrl.split(",");
+    const mime = header.match(/:(.*?);/)?.[1] || "image/jpeg";
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
+  };
+
   const handleSave = async () => {
-    if (!result) return;
+    if (!result || !imageDataUrl) return;
     setSaving(true);
-    const today = todayISO();
-    const next = addDaysISO(today, result.watering_frequency_days);
-    const { error } = await supabase.from("plants").insert({
-      name: result.name,
-      location: result.location,
-      watering_frequency_days: result.watering_frequency_days,
-      image_url: imageDataUrl, // store the photo so user sees their own pic
-      last_watered_date: today,
-      next_watering_date: next,
-    });
-    setSaving(false);
-    if (error) {
-      toast.error("Could not save plant");
-      return;
+    try {
+      // 1. Upload photo to the public `plants` storage bucket
+      const blob = dataUrlToBlob(imageDataUrl);
+      const ext = (imageMime.split("/")[1] || "jpg").replace("jpeg", "jpg");
+      const path = `${crypto.randomUUID()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("plants")
+        .upload(path, blob, { contentType: imageMime, upsert: false });
+
+      if (uploadError) {
+        console.error(uploadError);
+        toast.error("Could not upload photo");
+        setSaving(false);
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage.from("plants").getPublicUrl(path);
+      const publicUrl = publicUrlData.publicUrl;
+
+      // 2. Insert plant row with the public URL (not the base64 blob)
+      const today = todayISO();
+      const next = addDaysISO(today, result.watering_frequency_days);
+      const { error } = await supabase.from("plants").insert({
+        name: result.name,
+        location: result.location,
+        watering_frequency_days: result.watering_frequency_days,
+        image_url: publicUrl,
+        last_watered_date: today,
+        next_watering_date: next,
+      });
+
+      if (error) {
+        toast.error("Could not save plant");
+        return;
+      }
+      toast.success(`${result.name} added to your collection 🌱`);
+      navigate({ to: "/inventory" });
+    } finally {
+      setSaving(false);
     }
-    toast.success(`${result.name} added to your collection 🌱`);
-    navigate({ to: "/inventory" });
   };
 
   return (

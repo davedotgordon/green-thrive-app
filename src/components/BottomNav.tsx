@@ -2,11 +2,18 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Home, Sprout, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const tabs = [
+type Tab = {
+  to: "/" | "/add" | "/inventory";
+  label: string;
+  icon: typeof Home;
+  primary?: boolean;
+};
+
+const tabs: Tab[] = [
   { to: "/", label: "Dashboard", icon: Home },
   { to: "/add", label: "Add", icon: Plus, primary: true },
   { to: "/inventory", label: "Inventory", icon: Sprout },
-] as const;
+];
 
 export function BottomNav() {
   const location = useLocation();

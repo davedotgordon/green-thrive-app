@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      plants: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          last_watered_date: string | null
+          location: Database["public"]["Enums"]["plant_location"]
+          name: string
+          next_watering_date: string | null
+          updated_at: string
+          watering_frequency_days: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          last_watered_date?: string | null
+          location?: Database["public"]["Enums"]["plant_location"]
+          name: string
+          next_watering_date?: string | null
+          updated_at?: string
+          watering_frequency_days?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          last_watered_date?: string | null
+          location?: Database["public"]["Enums"]["plant_location"]
+          name?: string
+          next_watering_date?: string | null
+          updated_at?: string
+          watering_frequency_days?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +58,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      plant_location: "indoor" | "outdoor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +185,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      plant_location: ["indoor", "outdoor"],
+    },
   },
 } as const

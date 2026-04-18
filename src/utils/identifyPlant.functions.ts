@@ -5,6 +5,8 @@ export interface IdentifiedPlant {
   location: "indoor" | "outdoor";
   watering_frequency_days: number;
   care_instructions: string;
+  pot_size: "small" | "medium" | "large";
+  establishment_level: "infant" | "young" | "mature" | "unsure";
 }
 
 interface Input {
@@ -41,7 +43,7 @@ export const identifyPlant = createServerFn({ method: "POST" })
         systemInstruction: {
           parts: [
             {
-              text: "You are a botanical expert. Identify the plant in the image and return care information as structured JSON. Always provide your best identification — never refuse.",
+              text: "You are a botanical expert calibrated for Atlanta, GA (hot, humid, USDA zone 8a). Identify the plant in the image and return care information as structured JSON. Always provide your best identification — never refuse. Visually estimate pot size and the plant's apparent age/establishment from the photo.",
             },
           ],
         },
@@ -50,7 +52,7 @@ export const identifyPlant = createServerFn({ method: "POST" })
             role: "user",
             parts: [
               {
-                text: "Identify this plant. Return its common name, whether it's typically grown indoor or outdoor, how often (in whole days) it should be watered, and a short 1-2 sentence care tip.",
+                text: "Identify this plant. Return its common name, indoor/outdoor preference for Atlanta GA, baseline watering frequency in whole days, a 1-2 sentence Atlanta-climate care tip, an estimated pot size (small/medium/large) based on the visible container, and an establishment level (infant for seedlings, young for juveniles, mature for full-grown, or unsure if you cannot tell).",
               },
               {
                 inlineData: {
@@ -70,8 +72,20 @@ export const identifyPlant = createServerFn({ method: "POST" })
               location: { type: "string", enum: ["indoor", "outdoor"] },
               watering_frequency_days: { type: "integer" },
               care_instructions: { type: "string" },
+              pot_size: { type: "string", enum: ["small", "medium", "large"] },
+              establishment_level: {
+                type: "string",
+                enum: ["infant", "young", "mature", "unsure"],
+              },
             },
-            required: ["name", "location", "watering_frequency_days", "care_instructions"],
+            required: [
+              "name",
+              "location",
+              "watering_frequency_days",
+              "care_instructions",
+              "pot_size",
+              "establishment_level",
+            ],
           },
         },
       }),
@@ -103,6 +117,9 @@ export const identifyPlant = createServerFn({ method: "POST" })
       throw new Error("AI returned invalid data");
     }
 
+    const validPot = ["small", "medium", "large"];
+    const validEst = ["infant", "young", "mature", "unsure"];
+
     return {
       name: String(parsed.name || "Unknown plant").trim(),
       location: parsed.location === "outdoor" ? "outdoor" : "indoor",
@@ -111,5 +128,9 @@ export const identifyPlant = createServerFn({ method: "POST" })
         Math.min(60, Number(parsed.watering_frequency_days) || 7),
       ),
       care_instructions: String(parsed.care_instructions || "").trim(),
+      pot_size: validPot.includes(parsed.pot_size) ? parsed.pot_size : "medium",
+      establishment_level: validEst.includes(parsed.establishment_level)
+        ? parsed.establishment_level
+        : "unsure",
     };
   });

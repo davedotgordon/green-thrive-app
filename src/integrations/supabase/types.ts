@@ -17,36 +17,45 @@ export type Database = {
       plants: {
         Row: {
           created_at: string
+          establishment_level: Database["public"]["Enums"]["establishment_level"]
           id: string
           image_url: string | null
           last_watered_date: string | null
           location: Database["public"]["Enums"]["plant_location"]
           name: string
           next_watering_date: string | null
+          pot_size: Database["public"]["Enums"]["pot_size"]
           updated_at: string
           watering_frequency_days: number
+          watering_volume: number
         }
         Insert: {
           created_at?: string
+          establishment_level?: Database["public"]["Enums"]["establishment_level"]
           id?: string
           image_url?: string | null
           last_watered_date?: string | null
           location?: Database["public"]["Enums"]["plant_location"]
           name: string
           next_watering_date?: string | null
+          pot_size?: Database["public"]["Enums"]["pot_size"]
           updated_at?: string
           watering_frequency_days?: number
+          watering_volume?: number
         }
         Update: {
           created_at?: string
+          establishment_level?: Database["public"]["Enums"]["establishment_level"]
           id?: string
           image_url?: string | null
           last_watered_date?: string | null
           location?: Database["public"]["Enums"]["plant_location"]
           name?: string
           next_watering_date?: string | null
+          pot_size?: Database["public"]["Enums"]["pot_size"]
           updated_at?: string
           watering_frequency_days?: number
+          watering_volume?: number
         }
         Relationships: []
       }
@@ -58,7 +67,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      establishment_level: "infant" | "young" | "mature" | "unsure"
       plant_location: "indoor" | "outdoor"
+      pot_size: "small" | "medium" | "large"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -186,7 +197,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      establishment_level: ["infant", "young", "mature", "unsure"],
       plant_location: ["indoor", "outdoor"],
+      pot_size: ["small", "medium", "large"],
     },
   },
 } as const

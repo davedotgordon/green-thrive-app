@@ -33,7 +33,7 @@ export const identifyPlant = createServerFn({ method: "POST" })
       throw new Error("GEMINI_API_KEY is not configured");
     }
 
-    const model = "gemini-2.5-flash";
+    const model = "gemini-flash-latest";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     console.log("[identifyPlant] incoming image", {

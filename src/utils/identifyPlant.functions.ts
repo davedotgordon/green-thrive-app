@@ -33,8 +33,15 @@ export const identifyPlant = createServerFn({ method: "POST" })
       throw new Error("GEMINI_API_KEY is not configured");
     }
 
-    const model = "gemini-1.5-flash";
+    const model = "gemini-2.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    console.log("[identifyPlant] incoming image", {
+      mimeType: data.mimeType,
+      base64Length: data.imageBase64.length,
+      base64Preview: data.imageBase64.slice(0, 40),
+      model,
+    });
 
     const response = await fetch(url, {
       method: "POST",
@@ -94,20 +101,45 @@ export const identifyPlant = createServerFn({ method: "POST" })
     if (!response.ok) {
       const text = await response.text().catch(() => "");
       console.error("Gemini API error:", response.status, text);
+      let detail = "";
+      try {
+        const j = JSON.parse(text);
+        detail = j?.error?.message || "";
+      } catch {
+        /* ignore */
+      }
       if (response.status === 429) {
         throw new Error("Too many requests — please try again in a moment.");
       }
       if (response.status === 401 || response.status === 403) {
         throw new Error("Invalid Gemini API key. Please check your configuration.");
       }
-      throw new Error("Could not identify plant — please try a clearer photo.");
+      if (response.status === 404) {
+        throw new Error(
+          `Gemini model not available for your key (${detail || "404"}). Falling back to manual entry.`,
+        );
+      }
+      throw new Error(
+        detail
+          ? `Gemini error: ${detail}`
+          : "Could not identify plant — please try a clearer photo.",
+      );
     }
 
     const json = await response.json();
-    const textOut: string | undefined = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const candidate = json?.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+    const textOut: string | undefined = candidate?.content?.parts?.[0]?.text;
     if (!textOut) {
-      console.error("Gemini returned no content:", JSON.stringify(json).slice(0, 500));
-      throw new Error("AI did not return a result");
+      console.error(
+        "Gemini returned no content:",
+        finishReason,
+        JSON.stringify(json).slice(0, 500),
+      );
+      if (finishReason === "MAX_TOKENS" || finishReason === "SAFETY") {
+        throw new Error("AI couldn't read this photo — please enter details manually.");
+      }
+      throw new Error("AI did not return a result — please enter details manually.");
     }
 
     let parsed: any;

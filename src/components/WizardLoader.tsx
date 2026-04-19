@@ -3,7 +3,7 @@ import { Sprout } from "lucide-react";
 
 const PHRASES = [
   "Consulting the Elder Ferns...",
-  "Measuring Atlanta humidity...",
+  "Measuring local humidity...",
   "Counting leaves...",
   "Whispering to the roots...",
   "Brewing a sip of rainwater...",
@@ -41,7 +41,7 @@ export function WizardLoader() {
           {PHRASES[idx]}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          The plant wizard is hard at work 🌿
+          The Water Wizard is hard at work 🌿
         </p>
       </div>
     </div>

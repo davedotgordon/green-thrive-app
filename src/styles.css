@@ -66,7 +66,10 @@
   --color-water-foreground: var(--water-foreground);
   --color-leaf: var(--leaf);
   --color-leaf-soft: var(--leaf-soft);
+  --color-pomegranate: var(--pomegranate);
+  --color-pomegranate-soft: var(--pomegranate-soft);
   --gradient-hero: var(--gradient-hero);
+  --gradient-pomegranate: var(--gradient-pomegranate);
   --gradient-card: var(--gradient-card);
   --shadow-soft: var(--shadow-soft);
   --shadow-card: var(--shadow-card);
@@ -74,32 +77,38 @@
 
 :root {
   --radius: 1rem;
-  --background: oklch(0.985 0.01 130);
-  --foreground: oklch(0.22 0.04 150);
+  /* Water Wizard: deep forest green + pomegranate coral accent */
+  --background: oklch(0.985 0.012 145);
+  --foreground: oklch(0.22 0.05 150);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.04 150);
+  --card-foreground: oklch(0.22 0.05 150);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.04 150);
-  --primary: oklch(0.55 0.13 155);
+  --popover-foreground: oklch(0.22 0.05 150);
+  /* Primary: deep forest green */
+  --primary: oklch(0.42 0.11 150);
   --primary-foreground: oklch(0.99 0.005 150);
   --secondary: oklch(0.95 0.025 145);
   --secondary-foreground: oklch(0.28 0.05 150);
   --muted: oklch(0.96 0.015 140);
   --muted-foreground: oklch(0.5 0.03 150);
-  --accent: oklch(0.92 0.05 145);
-  --accent-foreground: oklch(0.28 0.06 150);
+  /* Accent: rich pomegranate coral */
+  --accent: oklch(0.65 0.18 28);
+  --accent-foreground: oklch(0.99 0.005 30);
   --destructive: oklch(0.6 0.22 27);
   --destructive-foreground: oklch(0.99 0.003 247);
   --border: oklch(0.9 0.02 145);
   --input: oklch(0.92 0.02 145);
-  --ring: oklch(0.55 0.13 155);
+  --ring: oklch(0.42 0.11 150);
 
-  --water: oklch(0.65 0.15 230);
+  --water: oklch(0.6 0.15 230);
   --water-foreground: oklch(0.99 0.005 230);
-  --leaf: oklch(0.55 0.13 155);
+  --leaf: oklch(0.42 0.11 150);
   --leaf-soft: oklch(0.92 0.06 150);
+  --pomegranate: oklch(0.65 0.18 28);
+  --pomegranate-soft: oklch(0.94 0.04 28);
 
-  --gradient-hero: linear-gradient(135deg, oklch(0.55 0.13 155), oklch(0.65 0.12 175));
+  --gradient-hero: linear-gradient(135deg, oklch(0.32 0.09 150), oklch(0.5 0.13 155));
+  --gradient-pomegranate: linear-gradient(135deg, oklch(0.6 0.18 25), oklch(0.7 0.16 35));
   --gradient-card: linear-gradient(180deg, oklch(1 0 0), oklch(0.97 0.02 145));
   --shadow-soft: 0 2px 12px -4px oklch(0.4 0.08 150 / 0.12);
   --shadow-card: 0 4px 20px -8px oklch(0.4 0.1 150 / 0.18);

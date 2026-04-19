@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Home, TreePine } from "lucide-react";
+import { ChevronDown, Home, TreePine, Umbrella } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PlantCard } from "@/components/PlantCard";
 import {
@@ -15,8 +15,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_app/inventory")({
   head: () => ({
     meta: [
-      { title: "Inventory — Family Plant Tracker" },
-      { name: "description", content: "All your indoor and outdoor plants in one place." },
+      { title: "Plants — Water Wizard" },
+      { name: "description", content: "All your indoor, porch, and outdoor plants." },
     ],
   }),
   component: Inventory,
@@ -77,13 +77,14 @@ function Inventory() {
       });
   }, []);
 
-  const indoor = useMemo(() => plants.filter((p) => p.location === "indoor"), [plants]);
-  const outdoor = useMemo(() => plants.filter((p) => p.location === "outdoor"), [plants]);
+  const indoor = useMemo(() => plants.filter((p) => p.exposure === "indoor"), [plants]);
+  const porch = useMemo(() => plants.filter((p) => p.exposure === "porch"), [plants]);
+  const outdoor = useMemo(() => plants.filter((p) => p.exposure === "outdoor"), [plants]);
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Inventory</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Plants</h1>
         <p className="mt-1 text-sm text-muted-foreground">All plants in your home and garden.</p>
       </div>
 
@@ -95,8 +96,9 @@ function Inventory() {
         </div>
       ) : (
         <div className="space-y-5">
-          <Section title="Indoor Tropicals" icon={Home} plants={indoor} defaultOpen />
-          <Section title="Outdoor / Garden" icon={TreePine} plants={outdoor} defaultOpen />
+          <Section title="Indoor" icon={Home} plants={indoor} defaultOpen />
+          <Section title="Porch (Covered)" icon={Umbrella} plants={porch} defaultOpen />
+          <Section title="Outdoor (Exposed)" icon={TreePine} plants={outdoor} defaultOpen />
         </div>
       )}
     </div>

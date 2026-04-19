@@ -18,6 +18,8 @@ export type Database = {
         Row: {
           created_at: string
           establishment_level: Database["public"]["Enums"]["establishment_level"]
+          exposure: Database["public"]["Enums"]["plant_exposure"]
+          family_id: string | null
           id: string
           image_url: string | null
           last_watered_date: string | null
@@ -25,6 +27,7 @@ export type Database = {
           name: string
           next_watering_date: string | null
           pot_size: Database["public"]["Enums"]["pot_size"]
+          rain_delay_until: string | null
           updated_at: string
           watering_frequency_days: number
           watering_volume: number
@@ -32,6 +35,8 @@ export type Database = {
         Insert: {
           created_at?: string
           establishment_level?: Database["public"]["Enums"]["establishment_level"]
+          exposure?: Database["public"]["Enums"]["plant_exposure"]
+          family_id?: string | null
           id?: string
           image_url?: string | null
           last_watered_date?: string | null
@@ -39,6 +44,7 @@ export type Database = {
           name: string
           next_watering_date?: string | null
           pot_size?: Database["public"]["Enums"]["pot_size"]
+          rain_delay_until?: string | null
           updated_at?: string
           watering_frequency_days?: number
           watering_volume?: number
@@ -46,6 +52,8 @@ export type Database = {
         Update: {
           created_at?: string
           establishment_level?: Database["public"]["Enums"]["establishment_level"]
+          exposure?: Database["public"]["Enums"]["plant_exposure"]
+          family_id?: string | null
           id?: string
           image_url?: string | null
           last_watered_date?: string | null
@@ -53,9 +61,40 @@ export type Database = {
           name?: string
           next_watering_date?: string | null
           pot_size?: Database["public"]["Enums"]["pot_size"]
+          rain_delay_until?: string | null
           updated_at?: string
           watering_frequency_days?: number
           watering_volume?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          city: string | null
+          created_at: string
+          display_name: string | null
+          family_id: string | null
+          id: string
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          display_name?: string | null
+          family_id?: string | null
+          id: string
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          display_name?: string | null
+          family_id?: string | null
+          id?: string
+          updated_at?: string
+          zip?: string | null
         }
         Relationships: []
       }
@@ -64,10 +103,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_family_id: { Args: never; Returns: string }
     }
     Enums: {
       establishment_level: "infant" | "young" | "mature" | "unsure"
+      plant_exposure: "indoor" | "porch" | "outdoor"
       plant_location: "indoor" | "outdoor"
       pot_size: "small" | "medium" | "large"
     }
@@ -198,6 +238,7 @@ export const Constants = {
   public: {
     Enums: {
       establishment_level: ["infant", "young", "mature", "unsure"],
+      plant_exposure: ["indoor", "porch", "outdoor"],
       plant_location: ["indoor", "outdoor"],
       pot_size: ["small", "medium", "large"],
     },

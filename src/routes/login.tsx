@@ -1,18 +1,19 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Sprout } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import loginBg from "@/assets/login-bg.png";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — Family Plant Tracker" },
-      { name: "description", content: "Sign in to manage your family's plant watering schedule." },
+      { title: "Sign in — Water Wizard" },
+      { name: "description", content: "Sign in to keep your plants thriving with the Water Wizard." },
     ],
   }),
   component: LoginPage,
@@ -44,17 +45,28 @@ function LoginPage() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4 py-10"
-      style={{ background: "var(--gradient-hero)" }}
+      className="relative flex min-h-screen items-center justify-center px-4 py-10"
+      style={{
+        backgroundImage: `url(${loginBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
     >
-      <Card className="w-full max-w-sm space-y-6 border-0 p-7 shadow-[var(--shadow-card)]">
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-black/55" aria-hidden="true" />
+
+      <Card className="relative z-10 w-full max-w-sm space-y-6 border-0 p-7 shadow-[var(--shadow-card)]">
         <div className="text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-leaf-soft">
-            <Sprout className="h-7 w-7 text-leaf" />
+          <div
+            className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl text-primary-foreground"
+            style={{ background: "var(--gradient-hero)" }}
+          >
+            <Sparkles className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Family Plant Tracker</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Water Wizard</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signin" ? "Sign in to keep your plants thriving" : "Create a family account"}
+            {mode === "signin" ? "Sign in to keep your plants thriving" : "Create your wizard account"}
           </p>
         </div>
 
@@ -68,7 +80,7 @@ function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="family@example.com"
+              placeholder="you@example.com"
             />
           </div>
           <div className="space-y-2">

@@ -1,25 +1,26 @@
 import { useMemo } from "react";
 import { Sparkles, Droplets, CalendarDays } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
   calcWatering,
+  formatVolume,
   type EstablishmentLevel,
-  type PlantLocation,
+  type LastWateredOption,
+  type PlantExposure,
   type PotSize,
 } from "@/lib/plants";
 
 export interface WizardState {
   name: string;
-  location: PlantLocation;
+  exposure: PlantExposure;
   pot_size: PotSize;
   establishment_level: EstablishmentLevel;
   care_instructions: string;
-  /** Soft baseline from AI (days) — used to anchor calculation. 0 = no baseline. */
   baseline_frequency_days: number;
+  last_watered: LastWateredOption;
   fromAI: boolean;
 }
 
@@ -27,6 +28,7 @@ interface Props {
   state: WizardState;
   setState: (s: WizardState) => void;
   imageDataUrl: string | null;
+  fellBackToManual?: boolean;
 }
 
 const POT_OPTIONS: { value: PotSize; label: string }[] = [
@@ -42,19 +44,32 @@ const AGE_OPTIONS: { value: EstablishmentLevel; label: string }[] = [
   { value: "unsure", label: "Unsure" },
 ];
 
-export function PlantWizard({ state, setState, imageDataUrl }: Props) {
+const EXPOSURE_OPTIONS: { value: PlantExposure; label: string; hint: string }[] = [
+  { value: "indoor", label: "Indoor", hint: "Inside the house" },
+  { value: "porch", label: "Porch", hint: "Covered / sheltered" },
+  { value: "outdoor", label: "Outdoor", hint: "Exposed to rain" },
+];
+
+const LAST_WATERED_OPTIONS: { value: LastWateredOption; label: string }[] = [
+  { value: "today", label: "Today" },
+  { value: "yesterday", label: "Yesterday" },
+  { value: "two_plus", label: "2+ Days Ago" },
+  { value: "bone_dry", label: "Bone Dry" },
+];
+
+export function PlantWizard({ state, setState, imageDataUrl, fellBackToManual }: Props) {
   const recommendation = useMemo(
     () =>
       calcWatering({
         potSize: state.pot_size,
         establishmentLevel: state.establishment_level,
-        location: state.location,
+        exposure: state.exposure,
         baselineFrequencyDays: state.baseline_frequency_days || undefined,
       }),
     [
       state.pot_size,
       state.establishment_level,
-      state.location,
+      state.exposure,
       state.baseline_frequency_days,
     ],
   );
@@ -74,6 +89,12 @@ export function PlantWizard({ state, setState, imageDataUrl }: Props) {
         >
           Manual entry — no photo
         </Card>
+      )}
+
+      {fellBackToManual && (
+        <div className="rounded-xl border border-accent/40 bg-accent/10 p-3 text-sm text-accent-foreground">
+          The wizard couldn't read this photo — please fill in the details below.
+        </div>
       )}
 
       <Card className="space-y-5 p-4">
@@ -97,21 +118,25 @@ export function PlantWizard({ state, setState, imageDataUrl }: Props) {
         </div>
 
         <div className="space-y-2">
-          <Label>Location</Label>
-          <div className="grid grid-cols-2 gap-2">
-            {(["indoor", "outdoor"] as PlantLocation[]).map((loc) => (
+          <Label>Where will it live?</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {EXPOSURE_OPTIONS.map((opt) => (
               <button
-                key={loc}
+                key={opt.value}
                 type="button"
-                onClick={() => setState({ ...state, location: loc })}
+                onClick={() => setState({ ...state, exposure: opt.value })}
                 className={cn(
-                  "rounded-lg border px-3 py-2 text-sm font-medium capitalize transition-colors",
-                  state.location === loc
+                  "flex flex-col items-center gap-0.5 rounded-lg border px-2 py-2 text-sm font-medium transition-colors",
+                  state.exposure === opt.value
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-input bg-background hover:bg-muted",
                 )}
               >
-                {loc}
+                <span>{opt.label}</span>
+                <span className={cn(
+                  "text-[10px] font-normal",
+                  state.exposure === opt.value ? "opacity-80" : "text-muted-foreground"
+                )}>{opt.hint}</span>
               </button>
             ))}
           </div>
@@ -161,20 +186,41 @@ export function PlantWizard({ state, setState, imageDataUrl }: Props) {
           </div>
         </div>
 
+        <div className="space-y-2">
+          <Label>When was this last watered?</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {LAST_WATERED_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setState({ ...state, last_watered: opt.value })}
+                className={cn(
+                  "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                  state.last_watered === opt.value
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-input bg-background hover:bg-muted",
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Live recommendation */}
         <div
           className="rounded-xl p-3 text-primary-foreground shadow-[var(--shadow-card)]"
           style={{ background: "var(--gradient-hero)" }}
         >
           <p className="text-xs font-semibold uppercase tracking-wide opacity-90">
-            Atlanta-calibrated recommendation
+            Wizard's recommendation
           </p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <div className="flex items-center gap-2">
               <Droplets className="h-5 w-5" />
               <div>
                 <p className="text-xs opacity-90">Volume</p>
-                <p className="text-base font-bold">{recommendation.volumeMl} ml</p>
+                <p className="text-base font-bold">{formatVolume(recommendation.volumeMl)}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -212,7 +258,7 @@ export function getRecommendation(state: WizardState) {
   return calcWatering({
     potSize: state.pot_size,
     establishmentLevel: state.establishment_level,
-    location: state.location,
+    exposure: state.exposure,
     baselineFrequencyDays: state.baseline_frequency_days || undefined,
   });
 }

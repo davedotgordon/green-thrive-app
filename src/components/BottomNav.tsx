@@ -1,18 +1,19 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Sprout, Plus } from "lucide-react";
+import { Home, Sprout, Plus, Settings as SettingsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tab = {
-  to: "/" | "/add" | "/inventory";
+  to: "/" | "/add" | "/inventory" | "/settings";
   label: string;
   icon: typeof Home;
   primary?: boolean;
 };
 
 const tabs: Tab[] = [
-  { to: "/", label: "Dashboard", icon: Home },
+  { to: "/", label: "Today", icon: Home },
+  { to: "/inventory", label: "Plants", icon: Sprout },
   { to: "/add", label: "Add", icon: Plus, primary: true },
-  { to: "/inventory", label: "Inventory", icon: Sprout },
+  { to: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 export function BottomNav() {

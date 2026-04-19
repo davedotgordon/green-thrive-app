@@ -10,8 +10,9 @@ export interface IdentifiedPlant {
 }
 
 interface Input {
-  imageBase64: string; // data URL or raw base64
+  imageBase64: string;
   mimeType: string;
+  city?: string | null;
 }
 
 export const identifyPlant = createServerFn({ method: "POST" })
@@ -25,7 +26,7 @@ export const identifyPlant = createServerFn({ method: "POST" })
     const base64 = input.imageBase64.includes(",")
       ? input.imageBase64.split(",")[1]
       : input.imageBase64;
-    return { imageBase64: base64, mimeType: input.mimeType };
+    return { imageBase64: base64, mimeType: input.mimeType, city: input.city ?? null };
   })
   .handler(async ({ data }): Promise<IdentifiedPlant> => {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -36,10 +37,14 @@ export const identifyPlant = createServerFn({ method: "POST" })
     const model = "gemini-flash-latest";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
+    const cityCtx = data.city
+      ? `the user's location: ${data.city}`
+      : "a generic temperate-humid US climate";
+
     console.log("[identifyPlant] incoming image", {
       mimeType: data.mimeType,
       base64Length: data.imageBase64.length,
-      base64Preview: data.imageBase64.slice(0, 40),
+      city: data.city,
       model,
     });
 
@@ -50,7 +55,7 @@ export const identifyPlant = createServerFn({ method: "POST" })
         systemInstruction: {
           parts: [
             {
-              text: "You are a botanical expert calibrated for Atlanta, GA (hot, humid, USDA zone 8a). Identify the plant in the image and return care information as structured JSON. Always provide your best identification — never refuse. Visually estimate pot size and the plant's apparent age/establishment from the photo.",
+              text: `You are a botanical expert calibrated for ${cityCtx}. Identify the plant in the image and return care information as structured JSON. Always provide your best identification — never refuse. Visually estimate pot size and the plant's apparent age/establishment from the photo. Factor pot size, plant age, and the user's local climate into your recommended baseline watering frequency.`,
             },
           ],
         },
@@ -59,7 +64,7 @@ export const identifyPlant = createServerFn({ method: "POST" })
             role: "user",
             parts: [
               {
-                text: "Identify this plant. Return its common name, indoor/outdoor preference for Atlanta GA, baseline watering frequency in whole days, a 1-2 sentence Atlanta-climate care tip, an estimated pot size (small/medium/large) based on the visible container, and an establishment level (infant for seedlings, young for juveniles, mature for full-grown, or unsure if you cannot tell).",
+                text: `Identify this plant. Return its common name, indoor/outdoor preference for ${cityCtx}, baseline watering frequency in whole days, a 1-2 sentence locally-tuned care tip, an estimated pot size (small/medium/large) based on the visible container, and an establishment level (infant for seedlings, young for juveniles, mature for full-grown, or unsure if you cannot tell).`,
               },
               {
                 inlineData: {

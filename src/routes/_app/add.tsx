@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { useServerFn } from "@tanstack/react-start";
 import { identifyPlant } from "@/utils/identifyPlant.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { addDaysISO, todayISO } from "@/lib/plants";
+import { addDaysISO, lastWateredToOffsetDays, todayISO } from "@/lib/plants";
 import { toast } from "sonner";
 import { WizardLoader } from "@/components/WizardLoader";
 import {
@@ -22,14 +22,15 @@ import {
   getRecommendation,
   type WizardState,
 } from "@/components/PlantWizard";
+import { useProfile } from "@/hooks/useProfile";
 
 export const Route = createFileRoute("/_app/add")({
   head: () => ({
     meta: [
-      { title: "Add Plant — Family Plant Tracker" },
+      { title: "Add Plant — Water Wizard" },
       {
         name: "description",
-        content: "Snap a photo and let the Plant Wizard set it up.",
+        content: "Snap a photo and let the Water Wizard set it up.",
       },
     ],
   }),
@@ -40,17 +41,19 @@ type Step = "capture" | "identifying" | "wizard";
 
 const EMPTY_STATE: WizardState = {
   name: "",
-  location: "indoor",
+  exposure: "indoor",
   pot_size: "medium",
   establishment_level: "unsure",
   care_instructions: "",
   baseline_frequency_days: 0,
+  last_watered: "today",
   fromAI: false,
 };
 
 function AddPlant() {
   const navigate = useNavigate();
   const identifyFn = useServerFn(identifyPlant);
+  const { profile } = useProfile();
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,6 +61,7 @@ function AddPlant() {
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [imageMime, setImageMime] = useState<string>("image/jpeg");
   const [wizard, setWizard] = useState<WizardState>(EMPTY_STATE);
+  const [fellBackToManual, setFellBackToManual] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const handleFile = (file: File) => {
@@ -70,26 +74,28 @@ function AddPlant() {
       const dataUrl = reader.result as string;
       setImageDataUrl(dataUrl);
       setImageMime(file.type);
+      setFellBackToManual(false);
       setStep("identifying");
       try {
         const identified = await identifyFn({
-          data: { imageBase64: dataUrl, mimeType: file.type },
+          data: { imageBase64: dataUrl, mimeType: file.type, city: profile?.city ?? null },
         });
         setWizard({
           name: identified.name,
-          location: identified.location,
+          exposure: identified.location === "outdoor" ? "outdoor" : "indoor",
           pot_size: identified.pot_size,
           establishment_level: identified.establishment_level,
           care_instructions: identified.care_instructions,
           baseline_frequency_days: identified.watering_frequency_days,
+          last_watered: "today",
           fromAI: true,
         });
         setStep("wizard");
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Identification failed";
         toast.error(msg);
-        // Fall back to manual wizard with the photo still attached
         setWizard({ ...EMPTY_STATE });
+        setFellBackToManual(true);
         setStep("wizard");
       }
     };
@@ -100,12 +106,14 @@ function AddPlant() {
     setImageDataUrl(null);
     setImageMime("image/jpeg");
     setWizard({ ...EMPTY_STATE });
+    setFellBackToManual(false);
     setStep("wizard");
   };
 
   const reset = () => {
     setImageDataUrl(null);
     setWizard(EMPTY_STATE);
+    setFellBackToManual(false);
     setStep("capture");
     if (cameraInputRef.current) cameraInputRef.current.value = "";
     if (galleryInputRef.current) galleryInputRef.current.value = "";
@@ -125,11 +133,15 @@ function AddPlant() {
       toast.error("Please give your plant a name");
       return;
     }
+    if (!profile?.family_id) {
+      toast.error("You need to join or create a family first");
+      navigate({ to: "/welcome" });
+      return;
+    }
     setSaving(true);
     try {
       let publicUrl: string | null = null;
 
-      // Upload photo if we have one
       if (imageDataUrl) {
         const blob = dataUrlToBlob(imageDataUrl);
         const ext = (imageMime.split("/")[1] || "jpg").replace("jpeg", "jpg");
@@ -150,18 +162,23 @@ function AddPlant() {
 
       const rec = getRecommendation(wizard);
       const today = todayISO();
-      const next = addDaysISO(today, rec.frequencyDays);
+      // Compute a "last watered" date based on the user's selection
+      const offset = lastWateredToOffsetDays(wizard.last_watered);
+      const lastWatered = offset === 0 ? today : addDaysISO(today, offset);
+      const next = addDaysISO(lastWatered, rec.frequencyDays);
 
       const { error } = await supabase.from("plants").insert({
         name: wizard.name.trim(),
-        location: wizard.location,
+        location: wizard.exposure === "indoor" ? "indoor" : "outdoor",
+        exposure: wizard.exposure,
         pot_size: wizard.pot_size,
         establishment_level: wizard.establishment_level,
         watering_frequency_days: rec.frequencyDays,
         watering_volume: rec.volumeMl,
         image_url: publicUrl,
-        last_watered_date: today,
+        last_watered_date: lastWatered,
         next_watering_date: next,
+        family_id: profile.family_id,
       });
 
       if (error) {
@@ -181,11 +198,10 @@ function AddPlant() {
       <header>
         <h1 className="text-2xl font-bold">Add a plant</h1>
         <p className="text-sm text-muted-foreground">
-          Snap a photo and the Plant Wizard will set it up.
+          Snap a photo and the Water Wizard will set it up.
         </p>
       </header>
 
-      {/* Hidden file inputs */}
       <input
         ref={cameraInputRef}
         type="file"
@@ -272,6 +288,7 @@ function AddPlant() {
             state={wizard}
             setState={setWizard}
             imageDataUrl={imageDataUrl}
+            fellBackToManual={fellBackToManual}
           />
 
           <div className="flex gap-2">

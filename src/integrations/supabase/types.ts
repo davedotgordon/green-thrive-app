@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       plants: {
         Row: {
+          ai_care_instructions: string | null
           created_at: string
           establishment_level: Database["public"]["Enums"]["establishment_level"]
           exposure: Database["public"]["Enums"]["plant_exposure"]
@@ -33,6 +34,7 @@ export type Database = {
           watering_volume: number
         }
         Insert: {
+          ai_care_instructions?: string | null
           created_at?: string
           establishment_level?: Database["public"]["Enums"]["establishment_level"]
           exposure?: Database["public"]["Enums"]["plant_exposure"]
@@ -50,6 +52,7 @@ export type Database = {
           watering_volume?: number
         }
         Update: {
+          ai_care_instructions?: string | null
           created_at?: string
           establishment_level?: Database["public"]["Enums"]["establishment_level"]
           exposure?: Database["public"]["Enums"]["plant_exposure"]

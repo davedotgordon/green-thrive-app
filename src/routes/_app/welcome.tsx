@@ -83,7 +83,7 @@ function Welcome() {
       toast.error("Could not join garden");
       return;
     }
-    toast.success(`Joined garden ${code}!`);
+    toast.success(`Joined garden ${code}! Welcome aboard 🌿`);
     await refetch();
     navigate({ to: "/" });
   };

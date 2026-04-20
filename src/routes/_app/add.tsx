@@ -160,7 +160,7 @@ function AddPlant() {
         publicUrl = supabase.storage.from("plants").getPublicUrl(path).data.publicUrl;
       }
 
-      const rec = getRecommendation(wizard);
+      const rec = getRecommendation(wizard, profile?.city ?? null);
       const today = todayISO();
       // Compute a "last watered" date based on the user's selection
       const offset = lastWateredToOffsetDays(wizard.last_watered);
@@ -179,6 +179,7 @@ function AddPlant() {
         last_watered_date: lastWatered,
         next_watering_date: next,
         family_id: profile.family_id,
+        ai_care_instructions: wizard.care_instructions?.trim() || null,
       });
 
       if (error) {
@@ -289,6 +290,7 @@ function AddPlant() {
             setState={setWizard}
             imageDataUrl={imageDataUrl}
             fellBackToManual={fellBackToManual}
+            city={profile?.city ?? null}
           />
 
           <div className="flex gap-2">

@@ -8,6 +8,7 @@ import {
   Sparkles,
   Trash2,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import {
   type PlantExposure,
 } from "@/lib/plants";
 import { recalibratePlant } from "@/utils/recalibratePlant.functions";
+import { refreshAdvice } from "@/utils/refreshAdvice.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/plant/$plantId")({

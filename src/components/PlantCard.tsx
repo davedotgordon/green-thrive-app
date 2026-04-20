@@ -56,9 +56,8 @@ export function PlantCard({ plant, onWater, variant = "dashboard" }: PlantCardPr
           {plant.watering_frequency_days === 1 ? "" : "s"}
         </p>
       </div>
-      {variant === "inventory" && (
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-      )}
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+
     </div>
   );
 

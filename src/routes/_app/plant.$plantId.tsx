@@ -230,19 +230,39 @@ function PlantDetail() {
         )}
       </div>
 
-      {plant.ai_care_instructions && (
-        <Card className="space-y-2 p-4" style={{ background: "var(--gradient-card)" }}>
+      <Card className="space-y-2 p-4" style={{ background: "var(--gradient-card)" }}>
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-primary">
             <Sparkles className="h-4 w-4" />
             <p className="text-xs font-semibold uppercase tracking-wide">
               Wizard's Advice
             </p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefreshAdvice}
+            disabled={refreshingAdvice}
+            className="h-7 px-2 text-xs"
+          >
+            {refreshingAdvice ? (
+              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-1 h-3.5 w-3.5" />
+            )}
+            {plant.ai_care_instructions ? "Refresh" : "Get advice"}
+          </Button>
+        </div>
+        {plant.ai_care_instructions ? (
           <p className="text-sm leading-relaxed text-foreground">
             {plant.ai_care_instructions}
           </p>
-        </Card>
-      )}
+        ) : (
+          <p className="text-sm italic text-muted-foreground">
+            No advice yet for this plant. Tap "Get advice" to consult the wizard.
+          </p>
+        )}
+      </Card>
 
       <Card className="space-y-3 p-4">
         <div className="grid grid-cols-2 gap-3">

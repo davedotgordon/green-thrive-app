@@ -138,6 +138,37 @@ function PlantDetail() {
     }
   };
 
+  const handleRefreshAdvice = async () => {
+    if (!plant || refreshingAdvice) return;
+    setRefreshingAdvice(true);
+    try {
+      const { care_instructions } = await refreshAdviceFn({
+        data: {
+          name: plant.name,
+          city: profile?.city ?? null,
+          exposure: plant.exposure,
+          pot_size: plant.pot_size,
+          establishment_level: plant.establishment_level,
+        },
+      });
+      const { error } = await supabase
+        .from("plants")
+        .update({ ai_care_instructions: care_instructions })
+        .eq("id", plant.id);
+      if (error) {
+        toast.error("Could not save advice");
+        return;
+      }
+      setPlant({ ...plant, ai_care_instructions: care_instructions });
+      toast.success("Wizard's Advice refreshed ✨");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not refresh advice";
+      toast.error(msg);
+    } finally {
+      setRefreshingAdvice(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!plant) return;
     if (!confirm(`Remove ${plant.name} from your garden?`)) return;

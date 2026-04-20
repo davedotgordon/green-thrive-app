@@ -67,13 +67,14 @@ export function PlantCard({ plant, onWater, variant = "dashboard" }: PlantCardPr
       className="overflow-hidden border-border/60 p-0 shadow-[var(--shadow-card)]"
       style={{ background: "var(--gradient-card)" }}
     >
-      {variant === "inventory" ? (
-        <Link to="/plant/$plantId" params={{ plantId: plant.id }} className="block">
-          {inner}
-        </Link>
-      ) : (
-        inner
-      )}
+      <Link
+        to="/plant/$plantId"
+        params={{ plantId: plant.id }}
+        className="block transition-colors hover:bg-muted/30"
+        aria-label={`Open ${plant.name}`}
+      >
+        {inner}
+      </Link>
       {variant === "dashboard" && (
         <div className="px-3 pb-3">
           <Button

@@ -22,6 +22,30 @@ export interface Plant {
   next_watering_date: string | null;
   rain_delay_until: string | null;
   family_id: string | null;
+  ai_care_instructions?: string | null;
+}
+
+// Cities where the heat-boost (+25% volume) applies for outdoor/porch plants
+const HOT_CITY_KEYWORDS = [
+  "atlanta",
+  "salt lake",
+  "slc",
+  "phoenix",
+  "tucson",
+  "las vegas",
+  "houston",
+  "dallas",
+  "austin",
+  "miami",
+  "tampa",
+  "orlando",
+  "san antonio",
+];
+
+export function isHotCity(city?: string | null): boolean {
+  if (!city) return false;
+  const c = city.toLowerCase();
+  return HOT_CITY_KEYWORDS.some((k) => c.includes(k));
 }
 
 export function getPlantImage(plant: Pick<Plant, "name" | "image_url">): string {
@@ -65,21 +89,20 @@ export function generateFamilyCode(): string {
 
 /**
  * Format watering volume as user-friendly copy.
- * <240ml -> "X cup" / "X cups"  (1 cup ≈ 240ml)
- * 240–950ml -> "X cups"
- * >950ml -> "X gallon Deep Soak" (1 gallon ≈ 3785ml)
+ * Renders as a half-cup-precise range or a gallon deep soak above ~3+ cups.
+ *   1 cup ≈ 240ml, 1 gallon ≈ 3785ml.
  */
 export function formatVolume(ml: number): string {
-  if (ml >= 950) {
+  if (ml >= 1900) {
     const gal = ml / 3785;
-    if (gal >= 0.95) {
-      const rounded = Math.round(gal * 2) / 2;
-      return `${rounded} Gallon Deep Soak`;
-    }
+    const rounded = Math.max(0.5, Math.round(gal * 2) / 2);
+    return `${rounded} Gallon Deep Soak`;
   }
   const cups = ml / 240;
-  if (cups < 1.25) return "1 Cup";
-  return `${Math.round(cups)} Cups`;
+  // Half-cup precision; never show "0 cups"
+  const rounded = Math.max(0.5, Math.round(cups * 2) / 2);
+  if (rounded === 1) return "1 Cup";
+  return `${rounded} Cups`;
 }
 
 export function lastWateredToOffsetDays(opt: LastWateredOption): number {
@@ -97,7 +120,13 @@ export function lastWateredToOffsetDays(opt: LastWateredOption): number {
 
 /**
  * Climate-calibrated watering recommendations.
- * Defaults tuned for hot/humid (Atlanta-like). City affects multipliers.
+ *
+ * Volume scale (in cups, 240ml each):
+ *   Small (<4"):    0.5–1 cup     → ~180ml base (mid 0.75c)
+ *   Medium (6-10"): 2–4 cups      → ~720ml base (mid 3c)
+ *   Large (>12"):   8–16 cups     → ~2880ml base (mid 12c)
+ *
+ * +25% boost for outdoor/porch plants in hot cities (Atlanta, SLC, Phoenix, etc).
  *
  * Returns recommended water volume (ml) and frequency (days between waterings).
  */
@@ -106,25 +135,36 @@ export function calcWatering(opts: {
   establishmentLevel: EstablishmentLevel;
   exposure: PlantExposure;
   baselineFrequencyDays?: number;
+  city?: string | null;
 }): { volumeMl: number; frequencyDays: number } {
   const { potSize, establishmentLevel, exposure } = opts;
 
-  const baseVolume = potSize === "small" ? 150 : potSize === "medium" ? 300 : 600;
+  // Mid-point of the prescribed range, in ml (1 cup = 240ml)
+  const baseVolume =
+    potSize === "small" ? 0.75 * 240 : potSize === "medium" ? 3 * 240 : 12 * 240;
 
   const establishmentVolMult =
     establishmentLevel === "infant"
-      ? 0.5
+      ? 0.6
       : establishmentLevel === "young"
-        ? 0.75
+        ? 0.8
         : establishmentLevel === "mature"
           ? 1.0
-          : 0.7;
+          : 0.85;
 
   // Outdoor exposed needs more; porch (covered) slightly more than indoor
   const exposureVolMult =
-    exposure === "outdoor" ? 1.35 : exposure === "porch" ? 1.1 : 1.0;
+    exposure === "outdoor" ? 1.25 : exposure === "porch" ? 1.1 : 1.0;
 
-  const volumeMl = Math.round(baseVolume * establishmentVolMult * exposureVolMult);
+  // +25% heat boost for outdoor/porch plants in hot cities
+  const heatMult =
+    (exposure === "outdoor" || exposure === "porch") && isHotCity(opts.city)
+      ? 1.25
+      : 1.0;
+
+  const volumeMl = Math.round(
+    baseVolume * establishmentVolMult * exposureVolMult * heatMult,
+  );
 
   let frequencyDays = potSize === "small" ? 4 : potSize === "medium" ? 7 : 10;
 

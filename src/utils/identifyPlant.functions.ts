@@ -41,6 +41,9 @@ export const identifyPlant = createServerFn({ method: "POST" })
       ? `the user's location: ${data.city}`
       : "a generic temperate-humid US climate";
 
+    // Pass a richer care_instructions prompt — this is shown as "Wizard's Advice"
+    // on the Plant Detail page, so it should be 2-3 sentences of practical tips.
+
     console.log("[identifyPlant] incoming image", {
       mimeType: data.mimeType,
       base64Length: data.imageBase64.length,
@@ -64,7 +67,7 @@ export const identifyPlant = createServerFn({ method: "POST" })
             role: "user",
             parts: [
               {
-                text: `Identify this plant. Return its common name, indoor/outdoor preference for ${cityCtx}, baseline watering frequency in whole days, a 1-2 sentence locally-tuned care tip, an estimated pot size (small/medium/large) based on the visible container, and an establishment level (infant for seedlings, young for juveniles, mature for full-grown, or unsure if you cannot tell).`,
+                text: `Identify this plant. Return its common name, indoor/outdoor preference for ${cityCtx}, baseline watering frequency in whole days, a 2-3 sentence locally-tuned care tip (light, soil, signs of distress), an estimated pot size (small/medium/large) based on the visible container, and an establishment level (infant for seedlings, young for juveniles, mature for full-grown, or unsure if you cannot tell).`,
               },
               {
                 inlineData: {

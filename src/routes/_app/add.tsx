@@ -64,21 +64,40 @@ function AddPlant() {
   const [fellBackToManual, setFellBackToManual] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const fileToDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error ?? new Error("Read failed"));
+      reader.readAsDataURL(file);
+    });
+
   const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      setImageDataUrl(dataUrl);
-      setImageMime(file.type);
-      setFellBackToManual(false);
-      setStep("identifying");
+    // SYNCHRONOUS state updates first — survives mobile camera tab restore.
+    const previewUrl = URL.createObjectURL(file);
+    setImageDataUrl(previewUrl);
+    setImageMime(file.type);
+    setFellBackToManual(false);
+    setStep("identifying");
+
+    // Now do the async work
+    void (async () => {
       try {
+        const dataUrl = await fileToDataUrl(file);
+        // Replace the object URL with the persistent base64 so it survives reloads
+        setImageDataUrl(dataUrl);
+        URL.revokeObjectURL(previewUrl);
+
         const identified = await identifyFn({
-          data: { imageBase64: dataUrl, mimeType: file.type, city: profile?.city ?? null },
+          data: {
+            imageBase64: dataUrl,
+            mimeType: file.type,
+            city: profile?.city ?? null,
+          },
         });
         setWizard({
           name: identified.name,
@@ -92,14 +111,14 @@ function AddPlant() {
         });
         setStep("wizard");
       } catch (err) {
+        console.error("[add-plant] identify failed", err);
         const msg = err instanceof Error ? err.message : "Identification failed";
         toast.error(msg);
         setWizard({ ...EMPTY_STATE });
         setFellBackToManual(true);
         setStep("wizard");
       }
-    };
-    reader.readAsDataURL(file);
+    })();
   };
 
   const startManual = () => {

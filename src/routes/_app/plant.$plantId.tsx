@@ -176,7 +176,7 @@ function PlantDetail() {
         onClick={() => navigate({ to: "/inventory" })}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" /> Back
+        <ArrowLeft className="h-4 w-4" /> Back to Garden
       </button>
 
       <img
@@ -194,6 +194,20 @@ function PlantDetail() {
           </p>
         )}
       </div>
+
+      {plant.ai_care_instructions && (
+        <Card className="space-y-2 p-4" style={{ background: "var(--gradient-card)" }}>
+          <div className="flex items-center gap-2 text-primary">
+            <Sparkles className="h-4 w-4" />
+            <p className="text-xs font-semibold uppercase tracking-wide">
+              Wizard's Advice
+            </p>
+          </div>
+          <p className="text-sm leading-relaxed text-foreground">
+            {plant.ai_care_instructions}
+          </p>
+        </Card>
+      )}
 
       <Card className="space-y-3 p-4">
         <div className="grid grid-cols-2 gap-3">

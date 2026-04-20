@@ -56,9 +56,8 @@ export function PlantCard({ plant, onWater, variant = "dashboard" }: PlantCardPr
           {plant.watering_frequency_days === 1 ? "" : "s"}
         </p>
       </div>
-      {variant === "inventory" && (
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-      )}
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+
     </div>
   );
 
@@ -67,13 +66,14 @@ export function PlantCard({ plant, onWater, variant = "dashboard" }: PlantCardPr
       className="overflow-hidden border-border/60 p-0 shadow-[var(--shadow-card)]"
       style={{ background: "var(--gradient-card)" }}
     >
-      {variant === "inventory" ? (
-        <Link to="/plant/$plantId" params={{ plantId: plant.id }} className="block">
-          {inner}
-        </Link>
-      ) : (
-        inner
-      )}
+      <Link
+        to="/plant/$plantId"
+        params={{ plantId: plant.id }}
+        className="block transition-colors hover:bg-muted/30"
+        aria-label={`Open ${plant.name}`}
+      >
+        {inner}
+      </Link>
       {variant === "dashboard" && (
         <div className="px-3 pb-3">
           <Button

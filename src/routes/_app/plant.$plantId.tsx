@@ -8,6 +8,7 @@ import {
   Sparkles,
   Trash2,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import {
   type PlantExposure,
 } from "@/lib/plants";
 import { recalibratePlant } from "@/utils/recalibratePlant.functions";
+import { refreshAdvice } from "@/utils/refreshAdvice.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/plant/$plantId")({
@@ -47,10 +49,12 @@ function PlantDetail() {
   const navigate = useNavigate();
   const { profile } = useProfile();
   const recalibrateFn = useServerFn(recalibratePlant);
+  const refreshAdviceFn = useServerFn(refreshAdvice);
 
   const [plant, setPlant] = useState<Plant | null>(null);
   const [loading, setLoading] = useState(true);
   const [recalibrating, setRecalibrating] = useState(false);
+  const [refreshingAdvice, setRefreshingAdvice] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -134,6 +138,37 @@ function PlantDetail() {
     }
   };
 
+  const handleRefreshAdvice = async () => {
+    if (!plant || refreshingAdvice) return;
+    setRefreshingAdvice(true);
+    try {
+      const { care_instructions } = await refreshAdviceFn({
+        data: {
+          name: plant.name,
+          city: profile?.city ?? null,
+          exposure: plant.exposure,
+          pot_size: plant.pot_size,
+          establishment_level: plant.establishment_level,
+        },
+      });
+      const { error } = await supabase
+        .from("plants")
+        .update({ ai_care_instructions: care_instructions })
+        .eq("id", plant.id);
+      if (error) {
+        toast.error("Could not save advice");
+        return;
+      }
+      setPlant({ ...plant, ai_care_instructions: care_instructions });
+      toast.success("Wizard's Advice refreshed ✨");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not refresh advice";
+      toast.error(msg);
+    } finally {
+      setRefreshingAdvice(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!plant) return;
     if (!confirm(`Remove ${plant.name} from your garden?`)) return;
@@ -195,19 +230,39 @@ function PlantDetail() {
         )}
       </div>
 
-      {plant.ai_care_instructions && (
-        <Card className="space-y-2 p-4" style={{ background: "var(--gradient-card)" }}>
+      <Card className="space-y-2 p-4" style={{ background: "var(--gradient-card)" }}>
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-primary">
             <Sparkles className="h-4 w-4" />
             <p className="text-xs font-semibold uppercase tracking-wide">
               Wizard's Advice
             </p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefreshAdvice}
+            disabled={refreshingAdvice}
+            className="h-7 px-2 text-xs"
+          >
+            {refreshingAdvice ? (
+              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-1 h-3.5 w-3.5" />
+            )}
+            {plant.ai_care_instructions ? "Refresh" : "Get advice"}
+          </Button>
+        </div>
+        {plant.ai_care_instructions ? (
           <p className="text-sm leading-relaxed text-foreground">
             {plant.ai_care_instructions}
           </p>
-        </Card>
-      )}
+        ) : (
+          <p className="text-sm italic text-muted-foreground">
+            No advice yet for this plant. Tap "Get advice" to consult the wizard.
+          </p>
+        )}
+      </Card>
 
       <Card className="space-y-3 p-4">
         <div className="grid grid-cols-2 gap-3">

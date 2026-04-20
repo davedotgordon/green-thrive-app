@@ -1,11 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, Save, Copy } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Copy, Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/hooks/useProfile";
+import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,6 +23,8 @@ export const Route = createFileRoute("/_app/settings")({
 
 function Settings() {
   const { profile, refetch } = useProfile();
+  const navigate = useNavigate();
+  const notifications = useNotifications();
   const [displayName, setDisplayName] = useState("");
   const [city, setCity] = useState("");
   const [zip, setZip] = useState("");
@@ -54,7 +58,7 @@ function Settings() {
       toast.error("Could not save");
       return;
     }
-    toast.success("Saved!");
+    toast.success("Preferences saved! 🌿");
     refetch();
   };
 
@@ -64,8 +68,37 @@ function Settings() {
     toast.success("Family code copied");
   };
 
+  const toggleNotifications = async (next: boolean) => {
+    if (next) {
+      const ok = await notifications.requestAndEnable();
+      if (ok) {
+        toast.success("Notifications enabled 🔔");
+        try {
+          new Notification("Water Wizard", {
+            body: "You'll get reminders when plants need watering.",
+          });
+        } catch {
+          /* some browsers block direct notifications */
+        }
+      } else if (notifications.permission === "denied") {
+        toast.error("Notifications are blocked in your browser settings");
+      }
+    } else {
+      notifications.disable();
+      toast("Notifications turned off");
+    }
+  };
+
   return (
     <div className="space-y-5">
+      <button
+        type="button"
+        onClick={() => navigate({ to: "/" })}
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" /> Back to Garden
+      </button>
+
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -125,6 +158,38 @@ function Settings() {
         </Button>
       </Card>
 
+      <Card className="space-y-3 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-leaf-soft text-leaf">
+              {notifications.enabled ? (
+                <Bell className="h-4 w-4" />
+              ) : (
+                <BellOff className="h-4 w-4" />
+              )}
+            </div>
+            <div>
+              <p className="font-semibold">Watering reminders</p>
+              <p className="text-xs text-muted-foreground">
+                {notifications.supported
+                  ? notifications.permission === "denied"
+                    ? "Blocked — re-enable in your browser site settings."
+                    : "Get a browser notification when a plant needs watering."
+                  : "Notifications aren't supported in this browser."}
+              </p>
+            </div>
+          </div>
+          <Switch
+            checked={notifications.enabled}
+            onCheckedChange={toggleNotifications}
+            disabled={
+              !notifications.supported || notifications.permission === "denied"
+            }
+            aria-label="Toggle notifications"
+          />
+        </div>
+      </Card>
+
       {profile?.family_id && (
         <Card className="space-y-2 p-5">
           <Label>Your family code</Label>
@@ -141,6 +206,14 @@ function Settings() {
           </p>
         </Card>
       )}
+
+      <Button
+        variant="outline"
+        onClick={() => navigate({ to: "/" })}
+        className="h-11 w-full"
+      >
+        Back to Garden
+      </Button>
     </div>
   );
 }

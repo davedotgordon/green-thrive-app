@@ -261,11 +261,12 @@ export function PlantWizard({ state, setState, imageDataUrl, fellBackToManual, c
   );
 }
 
-export function getRecommendation(state: WizardState) {
+export function getRecommendation(state: WizardState, city?: string | null) {
   return calcWatering({
     potSize: state.pot_size,
     establishmentLevel: state.establishment_level,
     exposure: state.exposure,
     baselineFrequencyDays: state.baseline_frequency_days || undefined,
+    city: city ?? null,
   });
 }

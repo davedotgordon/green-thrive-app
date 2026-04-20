@@ -161,7 +161,7 @@ function AddPlant() {
     try {
       let publicUrl: string | null = null;
 
-      if (imageDataUrl) {
+      if (imageDataUrl && imageDataUrl.startsWith("data:")) {
         const blob = dataUrlToBlob(imageDataUrl);
         const ext = (imageMime.split("/")[1] || "jpg").replace("jpeg", "jpg");
         const path = `${crypto.randomUUID()}.${ext}`;

@@ -49,10 +49,12 @@ function PlantDetail() {
   const navigate = useNavigate();
   const { profile } = useProfile();
   const recalibrateFn = useServerFn(recalibratePlant);
+  const refreshAdviceFn = useServerFn(refreshAdvice);
 
   const [plant, setPlant] = useState<Plant | null>(null);
   const [loading, setLoading] = useState(true);
   const [recalibrating, setRecalibrating] = useState(false);
+  const [refreshingAdvice, setRefreshingAdvice] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {

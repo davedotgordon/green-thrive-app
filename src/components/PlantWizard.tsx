@@ -29,12 +29,13 @@ interface Props {
   setState: (s: WizardState) => void;
   imageDataUrl: string | null;
   fellBackToManual?: boolean;
+  city?: string | null;
 }
 
-const POT_OPTIONS: { value: PotSize; label: string }[] = [
-  { value: "small", label: "Small" },
-  { value: "medium", label: "Medium" },
-  { value: "large", label: "Large" },
+const POT_OPTIONS: { value: PotSize; label: string; hint: string }[] = [
+  { value: "small", label: "Small", hint: "<4″" },
+  { value: "medium", label: "Medium", hint: "6–10″" },
+  { value: "large", label: "Large", hint: ">12″" },
 ];
 
 const AGE_OPTIONS: { value: EstablishmentLevel; label: string }[] = [
@@ -57,7 +58,7 @@ const LAST_WATERED_OPTIONS: { value: LastWateredOption; label: string }[] = [
   { value: "bone_dry", label: "Bone Dry" },
 ];
 
-export function PlantWizard({ state, setState, imageDataUrl, fellBackToManual }: Props) {
+export function PlantWizard({ state, setState, imageDataUrl, fellBackToManual, city }: Props) {
   const recommendation = useMemo(
     () =>
       calcWatering({
@@ -65,12 +66,14 @@ export function PlantWizard({ state, setState, imageDataUrl, fellBackToManual }:
         establishmentLevel: state.establishment_level,
         exposure: state.exposure,
         baselineFrequencyDays: state.baseline_frequency_days || undefined,
+        city: city ?? null,
       }),
     [
       state.pot_size,
       state.establishment_level,
       state.exposure,
       state.baseline_frequency_days,
+      city,
     ],
   );
 
@@ -151,13 +154,17 @@ export function PlantWizard({ state, setState, imageDataUrl, fellBackToManual }:
                 type="button"
                 onClick={() => setState({ ...state, pot_size: opt.value })}
                 className={cn(
-                  "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                  "flex flex-col items-center gap-0.5 rounded-lg border px-2 py-2 text-sm font-medium transition-colors",
                   state.pot_size === opt.value
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-input bg-background hover:bg-muted",
                 )}
               >
-                {opt.label}
+                <span>{opt.label}</span>
+                <span className={cn(
+                  "text-[10px] font-normal",
+                  state.pot_size === opt.value ? "opacity-80" : "text-muted-foreground"
+                )}>{opt.hint}</span>
               </button>
             ))}
           </div>

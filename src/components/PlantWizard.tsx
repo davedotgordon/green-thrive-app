@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
   calcWatering,
-  formatVolume,
+  intensityFromVolume,
+  intensityLabel,
   type EstablishmentLevel,
   type LastWateredOption,
   type PlantExposure,
@@ -226,8 +227,10 @@ export function PlantWizard({ state, setState, imageDataUrl, fellBackToManual, c
             <div className="flex items-center gap-2">
               <Droplets className="h-5 w-5" />
               <div>
-                <p className="text-xs opacity-90">Volume</p>
-                <p className="text-base font-bold">{formatVolume(recommendation.volumeMl)}</p>
+                <p className="text-xs opacity-90">Watering</p>
+                <p className="text-base font-bold">
+                  {intensityLabel(intensityFromVolume(recommendation.volumeMl))}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">

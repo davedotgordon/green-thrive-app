@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 import {
   getPlantImage,
   intensityFromVolume,
-  intensityLabel,
   isRainDelayed,
   type Plant,
 } from "@/lib/plants";
+import { WateringIntensityLabel } from "@/components/WateringIntensityLabel";
 
 interface PlantCardProps {
   plant: Plant;
@@ -58,9 +58,11 @@ export function PlantCard({ plant, onWater, variant = "dashboard" }: PlantCardPr
         </div>
         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
           <Droplets className="h-3.5 w-3.5" />
-          {intensityLabel(intensityFromVolume(plant.watering_volume))} every{" "}
-          {plant.watering_frequency_days} day
-          {plant.watering_frequency_days === 1 ? "" : "s"}
+          <WateringIntensityLabel intensity={intensityFromVolume(plant.watering_volume)} />
+          <span>
+            every {plant.watering_frequency_days} day
+            {plant.watering_frequency_days === 1 ? "" : "s"}
+          </span>
         </p>
       </div>
       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />

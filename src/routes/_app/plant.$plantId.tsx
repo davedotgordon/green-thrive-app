@@ -20,11 +20,11 @@ import { useProfile } from "@/hooks/useProfile";
 import {
   getPlantImage,
   intensityFromVolume,
-  intensityLabel,
   isRainDelayed,
   type Plant,
   type PlantExposure,
 } from "@/lib/plants";
+import { WateringIntensityLabel } from "@/components/WateringIntensityLabel";
 import { recalibratePlant } from "@/utils/recalibratePlant.functions";
 import { refreshAdvice } from "@/utils/refreshAdvice.functions";
 import { toast } from "sonner";
@@ -272,7 +272,10 @@ function PlantDetail() {
               <Droplets className="h-3.5 w-3.5" /> Watering
             </div>
             <p className="mt-1 text-base font-bold">
-              {intensityLabel(intensityFromVolume(plant.watering_volume))}
+              <WateringIntensityLabel
+                intensity={intensityFromVolume(plant.watering_volume)}
+                variant="block"
+              />
             </p>
           </div>
           <div className="rounded-xl bg-leaf-soft/60 p-3">

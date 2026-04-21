@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Camera,
   Image as ImageIcon,
@@ -74,33 +74,42 @@ function AddPlant() {
   const [fellBackToManual, setFellBackToManual] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Track whether we've completed the initial restore — so the persist effect
+  // doesn't wipe sessionStorage on the first render before restore lands.
+  const hydratedRef = useRef(false);
+
   // Restore any pending plant state on mount — survives mobile camera tab restore.
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") {
+      hydratedRef.current = true;
+      return;
+    }
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as PendingState;
-      if (parsed.step && parsed.step !== "capture") {
-        setStep(parsed.step);
-        setImageDataUrl(parsed.imageDataUrl);
-        setImageMime(parsed.imageMime);
-        setWizard(parsed.wizard);
-        setFellBackToManual(parsed.fellBackToManual);
+      if (raw) {
+        const parsed = JSON.parse(raw) as PendingState;
+        if (parsed.step && parsed.step !== "capture") {
+          setStep(parsed.step);
+          setImageDataUrl(parsed.imageDataUrl);
+          setImageMime(parsed.imageMime);
+          setWizard(parsed.wizard);
+          setFellBackToManual(parsed.fellBackToManual);
+        }
       }
     } catch {
       sessionStorage.removeItem(STORAGE_KEY);
     }
+    hydratedRef.current = true;
   }, []);
 
-  // Persist whenever the wizard/image state changes (only after we've moved past capture).
+  // Persist whenever the wizard/image state changes.
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!hydratedRef.current) return; // wait for restore to settle
     if (step === "capture") {
       sessionStorage.removeItem(STORAGE_KEY);
       return;
     }
-    // Only persist base64 images (not transient object URLs)
     const persistableImage =
       imageDataUrl && imageDataUrl.startsWith("data:") ? imageDataUrl : null;
     const payload: PendingState = {
@@ -113,42 +122,17 @@ function AddPlant() {
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch {
-      // Quota exceeded (large base64) — drop silently
+      // Quota exceeded — drop silently
     }
   }, [step, imageDataUrl, imageMime, wizard, fellBackToManual]);
 
-  const fileToDataUrl = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(reader.error ?? new Error("Read failed"));
-      reader.readAsDataURL(file);
-    });
-
-  const handleFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
-    // SYNCHRONOUS state updates first — survives mobile camera tab restore.
-    const previewUrl = URL.createObjectURL(file);
-    setImageDataUrl(previewUrl);
-    setImageMime(file.type);
-    setFellBackToManual(false);
-    setStep("identifying");
-
-    // Now do the async work
-    void (async () => {
+  const runIdentify = useCallback(
+    async (dataUrl: string, mimeType: string) => {
       try {
-        const dataUrl = await fileToDataUrl(file);
-        // Replace the object URL with the persistent base64 so it survives reloads
-        setImageDataUrl(dataUrl);
-        URL.revokeObjectURL(previewUrl);
-
         const identified = await identifyFn({
           data: {
             imageBase64: dataUrl,
-            mimeType: file.type,
+            mimeType,
             city: profile?.city ?? null,
           },
         });
@@ -171,8 +155,51 @@ function AddPlant() {
         setFellBackToManual(true);
         setStep("wizard");
       }
-    })();
-  };
+    },
+    [identifyFn, profile?.city],
+  );
+
+  const handleFile = useCallback(
+    (file: File) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file");
+        return;
+      }
+      console.log("[add-plant] file received", {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      });
+      // Read straight to base64 — skip the intermediate object URL which can
+      // become invalid if Android Chrome suspends the tab while the camera is open.
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setImageDataUrl(dataUrl);
+        setImageMime(file.type);
+        setFellBackToManual(false);
+        setStep("identifying");
+        void runIdentify(dataUrl, file.type);
+      };
+      reader.onerror = () => {
+        console.error("[add-plant] FileReader failed", reader.error);
+        toast.error("Could not read photo — please try again");
+      };
+      reader.readAsDataURL(file);
+    },
+    [runIdentify],
+  );
+
+  // Stable change handler shared by camera + gallery inputs.
+  const onInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const f = e.target.files?.[0];
+      // Reset value so picking the same photo a second time still fires onChange.
+      e.target.value = "";
+      if (f) handleFile(f);
+    },
+    [handleFile],
+  );
 
   const startManual = () => {
     setImageDataUrl(null);
@@ -282,22 +309,15 @@ function AddPlant() {
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFile(f);
-        }}
+        onChange={onInputChange}
       />
       <input
         ref={galleryInputRef}
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFile(f);
-        }}
+        onChange={onInputChange}
       />
-
       {step === "capture" && (
         <div className="space-y-3">
           <Card className="overflow-hidden border-dashed">

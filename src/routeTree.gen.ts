@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
+import { Route as AppSetupRouteImport } from './routes/_app/setup'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
 import { Route as AppAddRouteImport } from './routes/_app/add'
@@ -35,6 +36,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppWelcomeRoute = AppWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSetupRoute = AppSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/add': typeof AppAddRoute
   '/inventory': typeof AppInventoryRoute
   '/settings': typeof AppSettingsRoute
+  '/setup': typeof AppSetupRoute
   '/welcome': typeof AppWelcomeRoute
   '/plant/$plantId': typeof AppPlantPlantIdRoute
 }
@@ -72,6 +79,7 @@ export interface FileRoutesByTo {
   '/add': typeof AppAddRoute
   '/inventory': typeof AppInventoryRoute
   '/settings': typeof AppSettingsRoute
+  '/setup': typeof AppSetupRoute
   '/welcome': typeof AppWelcomeRoute
   '/': typeof AppIndexRoute
   '/plant/$plantId': typeof AppPlantPlantIdRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   '/_app/add': typeof AppAddRoute
   '/_app/inventory': typeof AppInventoryRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/setup': typeof AppSetupRoute
   '/_app/welcome': typeof AppWelcomeRoute
   '/_app/': typeof AppIndexRoute
   '/_app/plant/$plantId': typeof AppPlantPlantIdRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
     | '/add'
     | '/inventory'
     | '/settings'
+    | '/setup'
     | '/welcome'
     | '/plant/$plantId'
   fileRoutesByTo: FileRoutesByTo
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
     | '/add'
     | '/inventory'
     | '/settings'
+    | '/setup'
     | '/welcome'
     | '/'
     | '/plant/$plantId'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
     | '/_app/add'
     | '/_app/inventory'
     | '/_app/settings'
+    | '/_app/setup'
     | '/_app/welcome'
     | '/_app/'
     | '/_app/plant/$plantId'
@@ -153,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWelcomeRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/setup': {
+      id: '/_app/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof AppSetupRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -188,6 +207,7 @@ interface AppRouteChildren {
   AppAddRoute: typeof AppAddRoute
   AppInventoryRoute: typeof AppInventoryRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppSetupRoute: typeof AppSetupRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppIndexRoute: typeof AppIndexRoute
   AppPlantPlantIdRoute: typeof AppPlantPlantIdRoute
@@ -197,6 +217,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAddRoute: AppAddRoute,
   AppInventoryRoute: AppInventoryRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppSetupRoute: AppSetupRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppIndexRoute: AppIndexRoute,
   AppPlantPlantIdRoute: AppPlantPlantIdRoute,

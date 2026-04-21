@@ -309,22 +309,15 @@ function AddPlant() {
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFile(f);
-        }}
+        onChange={onInputChange}
       />
       <input
         ref={galleryInputRef}
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFile(f);
-        }}
+        onChange={onInputChange}
       />
-
       {step === "capture" && (
         <div className="space-y-3">
           <Card className="overflow-hidden border-dashed">

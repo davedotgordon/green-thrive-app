@@ -259,7 +259,8 @@ function AddPlant() {
         toast.error("Could not save plant");
         return;
       }
-      toast.success(`${wizard.name} added to your collection 🌱`);
+      toast.success(`${wizard.name} added to your garden 🌱`);
+      if (typeof window !== "undefined") sessionStorage.removeItem(STORAGE_KEY);
       navigate({ to: "/inventory" });
     } finally {
       setSaving(false);

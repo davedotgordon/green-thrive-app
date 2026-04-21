@@ -64,7 +64,7 @@ function Welcome() {
     }
     toast.success(`Garden created! Your code: ${code}`);
     await refetch();
-    navigate({ to: "/" });
+    navigate({ to: "/setup" });
   };
 
   const joinExisting = async () => {
@@ -85,7 +85,7 @@ function Welcome() {
     }
     toast.success(`Joined garden ${code}! Welcome aboard 🌿`);
     await refetch();
-    navigate({ to: "/" });
+    navigate({ to: "/setup" });
   };
 
   return (

@@ -18,8 +18,9 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import {
-  formatVolume,
   getPlantImage,
+  intensityFromVolume,
+  intensityLabel,
   isRainDelayed,
   type Plant,
   type PlantExposure,
@@ -268,9 +269,11 @@ function PlantDetail() {
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl bg-leaf-soft/60 p-3">
             <div className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-leaf">
-              <Droplets className="h-3.5 w-3.5" /> Volume
+              <Droplets className="h-3.5 w-3.5" /> Watering
             </div>
-            <p className="mt-1 text-base font-bold">{formatVolume(plant.watering_volume)}</p>
+            <p className="mt-1 text-base font-bold">
+              {intensityLabel(intensityFromVolume(plant.watering_volume))}
+            </p>
           </div>
           <div className="rounded-xl bg-leaf-soft/60 p-3">
             <div className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-leaf">

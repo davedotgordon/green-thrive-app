@@ -7,6 +7,28 @@ export type PlantExposure = "indoor" | "porch" | "outdoor";
 export type PotSize = "small" | "medium" | "large";
 export type EstablishmentLevel = "infant" | "young" | "mature" | "unsure";
 export type LastWateredOption = "today" | "yesterday" | "two_plus" | "bone_dry";
+export type WateringIntensity = "light_sip" | "moderate_drink" | "deep_soak";
+
+/**
+ * Map a recommended water volume in ml to a descriptive intensity.
+ * Light Sip < 360ml (~1.5 cups). Deep Soak ≥ 1200ml (~5 cups). Moderate in between.
+ */
+export function intensityFromVolume(ml: number): WateringIntensity {
+  if (ml >= 1200) return "deep_soak";
+  if (ml < 360) return "light_sip";
+  return "moderate_drink";
+}
+
+export function intensityLabel(i: WateringIntensity): string {
+  switch (i) {
+    case "deep_soak":
+      return "Deep Soak";
+    case "moderate_drink":
+      return "Moderate Drink";
+    case "light_sip":
+      return "Light Sip";
+  }
+}
 
 export interface Plant {
   id: string;

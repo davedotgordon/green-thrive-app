@@ -27,6 +27,17 @@ function AppLayout() {
     if (authLoading || profileLoading || !user) return;
     if (!profile?.family_id && location.pathname !== "/welcome") {
       navigate({ to: "/welcome" });
+      return;
+    }
+    // Once they have a family, send them through the install/notification setup once.
+    if (
+      profile?.family_id &&
+      typeof window !== "undefined" &&
+      localStorage.getItem("ww_setup_complete") !== "1" &&
+      location.pathname !== "/setup" &&
+      location.pathname !== "/welcome"
+    ) {
+      navigate({ to: "/setup" });
     }
   }, [authLoading, profileLoading, user, profile?.family_id, location.pathname, navigate]);
 
@@ -41,7 +52,8 @@ function AppLayout() {
   if (!user) return null;
 
   const onWelcome = location.pathname === "/welcome";
-  const showNav = !onWelcome && profile?.family_id;
+  const onSetup = location.pathname === "/setup";
+  const showNav = !onWelcome && !onSetup && profile?.family_id;
 
   return (
     <div className={`min-h-screen bg-background ${showNav ? "pb-24" : ""}`}>

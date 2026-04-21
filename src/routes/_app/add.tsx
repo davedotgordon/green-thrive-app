@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Camera,
   Image as ImageIcon,
@@ -50,6 +50,16 @@ const EMPTY_STATE: WizardState = {
   fromAI: false,
 };
 
+const STORAGE_KEY = "ww_pending_plant";
+
+interface PendingState {
+  step: Step;
+  imageDataUrl: string | null;
+  imageMime: string;
+  wizard: WizardState;
+  fellBackToManual: boolean;
+}
+
 function AddPlant() {
   const navigate = useNavigate();
   const identifyFn = useServerFn(identifyPlant);
@@ -63,6 +73,49 @@ function AddPlant() {
   const [wizard, setWizard] = useState<WizardState>(EMPTY_STATE);
   const [fellBackToManual, setFellBackToManual] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Restore any pending plant state on mount — survives mobile camera tab restore.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as PendingState;
+      if (parsed.step && parsed.step !== "capture") {
+        setStep(parsed.step);
+        setImageDataUrl(parsed.imageDataUrl);
+        setImageMime(parsed.imageMime);
+        setWizard(parsed.wizard);
+        setFellBackToManual(parsed.fellBackToManual);
+      }
+    } catch {
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
+
+  // Persist whenever the wizard/image state changes (only after we've moved past capture).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (step === "capture") {
+      sessionStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+    // Only persist base64 images (not transient object URLs)
+    const persistableImage =
+      imageDataUrl && imageDataUrl.startsWith("data:") ? imageDataUrl : null;
+    const payload: PendingState = {
+      step,
+      imageDataUrl: persistableImage,
+      imageMime,
+      wizard,
+      fellBackToManual,
+    };
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // Quota exceeded (large base64) — drop silently
+    }
+  }, [step, imageDataUrl, imageMime, wizard, fellBackToManual]);
 
   const fileToDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -206,7 +259,8 @@ function AddPlant() {
         toast.error("Could not save plant");
         return;
       }
-      toast.success(`${wizard.name} added to your collection 🌱`);
+      toast.success(`${wizard.name} added to your garden 🌱`);
+      if (typeof window !== "undefined") sessionStorage.removeItem(STORAGE_KEY);
       navigate({ to: "/inventory" });
     } finally {
       setSaving(false);

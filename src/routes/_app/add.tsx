@@ -303,29 +303,29 @@ function AddPlant() {
         </p>
       </header>
 
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={onInputChange}
-      />
-      <input
-        ref={galleryInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={onInputChange}
-      />
       {step === "capture" && (
         <div className="space-y-3">
+          {/*
+            Android 14/15 + iOS Safari quirk: a hidden (display:none) <input
+            type="file"> triggered via .click() often does not fire `change`
+            after the camera returns, because the input element is detached
+            from the layout tree. The fix is to keep the input in the layout
+            (visually clipped via sr-only) and trigger it via a real <label>.
+          */}
           <Card className="overflow-hidden border-dashed">
-            <button
-              type="button"
-              onClick={() => cameraInputRef.current?.click()}
-              className="flex w-full flex-col items-center justify-center gap-3 px-6 py-12 text-center transition-colors hover:bg-muted/50"
+            <label
+              htmlFor="ww-camera-input"
+              className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 px-6 py-12 text-center transition-colors hover:bg-muted/50"
             >
+              <input
+                id="ww-camera-input"
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="sr-only"
+                onChange={onInputChange}
+              />
               <div
                 className="flex h-16 w-16 items-center justify-center rounded-full text-primary-foreground shadow-[var(--shadow-card)]"
                 style={{ background: "var(--gradient-hero)" }}
@@ -338,18 +338,24 @@ function AddPlant() {
                   Use your device camera
                 </p>
               </div>
-            </button>
+            </label>
           </Card>
 
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full"
-            onClick={() => galleryInputRef.current?.click()}
+          <label
+            htmlFor="ww-gallery-input"
+            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-input bg-background px-8 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground"
           >
-            <ImageIcon className="mr-2 h-5 w-5" />
+            <input
+              id="ww-gallery-input"
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={onInputChange}
+            />
+            <ImageIcon className="h-5 w-5" />
             Choose from gallery
-          </Button>
+          </label>
 
           <Button
             variant="ghost"

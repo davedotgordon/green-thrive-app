@@ -20,11 +20,11 @@ import { useProfile } from "@/hooks/useProfile";
 import {
   getPlantImage,
   intensityFromVolume,
-  intensityLabel,
   isRainDelayed,
   type Plant,
   type PlantExposure,
 } from "@/lib/plants";
+import { WateringIntensityLabel } from "@/components/WateringIntensityLabel";
 import { recalibratePlant } from "@/utils/recalibratePlant.functions";
 import { refreshAdvice } from "@/utils/refreshAdvice.functions";
 import { toast } from "sonner";

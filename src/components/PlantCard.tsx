@@ -4,7 +4,13 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { formatVolume, getPlantImage, isRainDelayed, type Plant } from "@/lib/plants";
+import {
+  getPlantImage,
+  intensityFromVolume,
+  intensityLabel,
+  isRainDelayed,
+  type Plant,
+} from "@/lib/plants";
 
 interface PlantCardProps {
   plant: Plant;
@@ -52,7 +58,8 @@ export function PlantCard({ plant, onWater, variant = "dashboard" }: PlantCardPr
         </div>
         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
           <Droplets className="h-3.5 w-3.5" />
-          {formatVolume(plant.watering_volume)} every {plant.watering_frequency_days} day
+          {intensityLabel(intensityFromVolume(plant.watering_volume))} every{" "}
+          {plant.watering_frequency_days} day
           {plant.watering_frequency_days === 1 ? "" : "s"}
         </p>
       </div>

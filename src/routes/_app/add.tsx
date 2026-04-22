@@ -323,16 +323,15 @@ function AddPlant() {
         />
       )}
 
-
       {step === "identifying" && (
         <Card className="space-y-2 p-6">
-          {imageDataUrl && (
+          {imageDataUrl ? (
             <img
               src={imageDataUrl}
               alt="Captured plant"
               className="mx-auto h-40 w-40 rounded-2xl object-cover shadow-[var(--shadow-card)]"
             />
-          )}
+          ) : null}
           <WizardLoader />
         </Card>
       )}

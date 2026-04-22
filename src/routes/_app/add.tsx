@@ -323,6 +323,50 @@ function AddPlant() {
         />
       )}
 
+
+      {step === "identifying" && (
+        <Card className="space-y-2 p-6">
+          {imageDataUrl && (
+            <img
+              src={imageDataUrl}
+              alt="Captured plant"
+              className="mx-auto h-40 w-40 rounded-2xl object-cover shadow-[var(--shadow-card)]"
+            />
+          )}
+          <WizardLoader />
+        </Card>
+      )}
+
+      {step === "wizard" && (
+        <div className="space-y-4">
+          <PlantWizard
+            state={wizard}
+            setState={setWizard}
+            imageDataUrl={imageDataUrl}
+            fellBackToManual={fellBackToManual}
+            city={profile?.city ?? null}
+          />
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={reset}
+              disabled={saving}
+              className="flex-1"
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Start over
+            </Button>
+            <Button onClick={handleSave} disabled={saving} className="flex-1">
+              {saving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="mr-2 h-4 w-4" />
+              )}
+              Save plant
+            </Button>
+          </div>
+
           <Button
             variant="ghost"
             onClick={() => navigate({ to: "/" })}

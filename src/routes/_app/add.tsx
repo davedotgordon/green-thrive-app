@@ -22,6 +22,7 @@ import {
   getRecommendation,
   type WizardState,
 } from "@/components/PlantWizard";
+import { CameraCapture } from "@/components/CameraCapture";
 import { useProfile } from "@/hooks/useProfile";
 
 export const Route = createFileRoute("/_app/add")({
@@ -54,10 +55,10 @@ function AddPlant() {
   const navigate = useNavigate();
   const identifyFn = useServerFn(identifyPlant);
   const { profile } = useProfile();
-  const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<Step>("capture");
+  const [showCamera, setShowCamera] = useState(false);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [imageMime, setImageMime] = useState<string>("image/jpeg");
   const [wizard, setWizard] = useState<WizardState>(EMPTY_STATE);
@@ -133,7 +134,7 @@ function AddPlant() {
     [runIdentify],
   );
 
-  // Stable change handler shared by camera + gallery inputs.
+  // Stable change handler for the gallery input.
   const onInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = e.target.files?.[0];
@@ -143,6 +144,25 @@ function AddPlant() {
     },
     [handleFile],
   );
+
+  // Direct hand-off from the WebRTC viewfinder — already a JPEG data URL.
+  const handleCapturedDataUrl = useCallback(
+    (dataUrl: string, mimeType: string) => {
+      setShowCamera(false);
+      setImageDataUrl(dataUrl);
+      setImageMime(mimeType);
+      setFellBackToManual(false);
+      setStep("identifying");
+      void runIdentify(dataUrl, mimeType);
+    },
+    [runIdentify],
+  );
+
+  const openGallery = useCallback(() => {
+    setShowCamera(false);
+    // Defer so the input is mounted before we click it.
+    requestAnimationFrame(() => galleryInputRef.current?.click());
+  }, []);
 
   const startManual = () => {
     setImageDataUrl(null);
@@ -157,7 +177,6 @@ function AddPlant() {
     setWizard(EMPTY_STATE);
     setFellBackToManual(false);
     setStep("capture");
-    if (cameraInputRef.current) cameraInputRef.current.value = "";
     if (galleryInputRef.current) galleryInputRef.current.value = "";
   };
 
@@ -247,27 +266,12 @@ function AddPlant() {
 
       {step === "capture" && (
         <div className="space-y-3">
-          {/*
-            Android 14/15 + iOS Safari quirk: a hidden (display:none) <input
-            type="file"> triggered via .click() often does not fire `change`
-            after the camera returns, because the input element is detached
-            from the layout tree. The fix is to keep the input in the layout
-            (visually clipped via sr-only) and trigger it via a real <label>.
-          */}
           <Card className="overflow-hidden border-dashed">
-            <label
-              htmlFor="ww-camera-input"
+            <button
+              type="button"
+              onClick={() => setShowCamera(true)}
               className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 px-6 py-12 text-center transition-colors hover:bg-muted/50"
             >
-              <input
-                id="ww-camera-input"
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="sr-only"
-                onChange={onInputChange}
-              />
               <div
                 className="flex h-16 w-16 items-center justify-center rounded-full text-primary-foreground shadow-[var(--shadow-card)]"
                 style={{ background: "var(--gradient-hero)" }}
@@ -277,10 +281,10 @@ function AddPlant() {
               <div>
                 <p className="font-semibold">Take a photo</p>
                 <p className="text-xs text-muted-foreground">
-                  Use your device camera
+                  Opens an in-app camera viewfinder
                 </p>
               </div>
-            </label>
+            </button>
           </Card>
 
           <label
@@ -296,7 +300,7 @@ function AddPlant() {
               onChange={onInputChange}
             />
             <ImageIcon className="h-5 w-5" />
-            Choose from gallery
+            Upload from gallery
           </label>
 
           <Button
@@ -310,6 +314,15 @@ function AddPlant() {
           </Button>
         </div>
       )}
+
+      {showCamera && (
+        <CameraCapture
+          onCapture={handleCapturedDataUrl}
+          onClose={() => setShowCamera(false)}
+          onPickGallery={openGallery}
+        />
+      )}
+
 
       {step === "identifying" && (
         <Card className="space-y-2 p-6">

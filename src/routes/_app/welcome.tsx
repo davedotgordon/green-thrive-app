@@ -85,7 +85,7 @@ function Welcome() {
     }
     toast.success(`Joined garden ${code}! Welcome aboard 🌿`);
     await refetch();
-    navigate({ to: "/setup" });
+    setTimeout(() => navigate({ to: "/setup" }), 100);
   };
 
   return (

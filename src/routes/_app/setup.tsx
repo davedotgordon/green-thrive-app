@@ -109,6 +109,17 @@ function AppSetup() {
 
   return (
     <div className="space-y-5">
+      <div className="flex justify-end">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={finish}
+          aria-label="Close setup and enter garden"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+
       <header className="text-center">
         <div
           className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl text-primary-foreground shadow-[var(--shadow-card)]"
@@ -172,9 +183,18 @@ function AppSetup() {
         )}
       </Card>
 
-      <Button variant="outline" onClick={finish} className="h-11 w-full">
-        {enabled ? "Enter Garden" : "Skip for now / Enter Garden"}
+      <Button onClick={finish} className="h-12 w-full text-base font-semibold">
+        Enter My Garden
+        <ArrowRight className="ml-1 h-5 w-5" />
       </Button>
+      {!enabled && supported && (
+        <button
+          onClick={finish}
+          className="block w-full text-center text-xs text-muted-foreground hover:text-foreground"
+        >
+          Skip alerts for now
+        </button>
+      )}
     </div>
   );
 }

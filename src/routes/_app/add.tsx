@@ -266,27 +266,12 @@ function AddPlant() {
 
       {step === "capture" && (
         <div className="space-y-3">
-          {/*
-            Android 14/15 + iOS Safari quirk: a hidden (display:none) <input
-            type="file"> triggered via .click() often does not fire `change`
-            after the camera returns, because the input element is detached
-            from the layout tree. The fix is to keep the input in the layout
-            (visually clipped via sr-only) and trigger it via a real <label>.
-          */}
           <Card className="overflow-hidden border-dashed">
-            <label
-              htmlFor="ww-camera-input"
+            <button
+              type="button"
+              onClick={() => setShowCamera(true)}
               className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 px-6 py-12 text-center transition-colors hover:bg-muted/50"
             >
-              <input
-                id="ww-camera-input"
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="sr-only"
-                onChange={onInputChange}
-              />
               <div
                 className="flex h-16 w-16 items-center justify-center rounded-full text-primary-foreground shadow-[var(--shadow-card)]"
                 style={{ background: "var(--gradient-hero)" }}
@@ -296,10 +281,10 @@ function AddPlant() {
               <div>
                 <p className="font-semibold">Take a photo</p>
                 <p className="text-xs text-muted-foreground">
-                  Use your device camera
+                  Opens an in-app camera viewfinder
                 </p>
               </div>
-            </label>
+            </button>
           </Card>
 
           <label
@@ -315,7 +300,7 @@ function AddPlant() {
               onChange={onInputChange}
             />
             <ImageIcon className="h-5 w-5" />
-            Choose from gallery
+            Upload from gallery
           </label>
 
           <Button
@@ -330,48 +315,13 @@ function AddPlant() {
         </div>
       )}
 
-      {step === "identifying" && (
-        <Card className="space-y-2 p-6">
-          {imageDataUrl && (
-            <img
-              src={imageDataUrl}
-              alt="Captured plant"
-              className="mx-auto h-40 w-40 rounded-2xl object-cover shadow-[var(--shadow-card)]"
-            />
-          )}
-          <WizardLoader />
-        </Card>
+      {showCamera && (
+        <CameraCapture
+          onCapture={handleCapturedDataUrl}
+          onClose={() => setShowCamera(false)}
+          onPickGallery={openGallery}
+        />
       )}
-
-      {step === "wizard" && (
-        <div className="space-y-4">
-          <PlantWizard
-            state={wizard}
-            setState={setWizard}
-            imageDataUrl={imageDataUrl}
-            fellBackToManual={fellBackToManual}
-            city={profile?.city ?? null}
-          />
-
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={reset}
-              disabled={saving}
-              className="flex-1"
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Start over
-            </Button>
-            <Button onClick={handleSave} disabled={saving} className="flex-1">
-              {saving ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Check className="mr-2 h-4 w-4" />
-              )}
-              Save plant
-            </Button>
-          </div>
 
           <Button
             variant="ghost"

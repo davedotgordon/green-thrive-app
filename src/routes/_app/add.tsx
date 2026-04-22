@@ -22,6 +22,7 @@ import {
   getRecommendation,
   type WizardState,
 } from "@/components/PlantWizard";
+import { CameraCapture } from "@/components/CameraCapture";
 import { useProfile } from "@/hooks/useProfile";
 
 export const Route = createFileRoute("/_app/add")({

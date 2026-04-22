@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Camera, X, Image as ImageIcon, RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -12,10 +13,10 @@ interface Props {
 /**
  * Full-screen in-app camera viewfinder built on the WebRTC mediaDevices API.
  *
- * We deliberately avoid `<input type="file" capture="environment">` because on
- * Android the OS often evicts the background browser tab while the native
- * camera app is open, and the `change` event never fires when the user
- * returns. Streaming directly to a <video> element keeps the page alive.
+ * Rendered through a React portal directly on document.body so it escapes the
+ * `_app` layout (max-w-md container + sticky header + BottomNav). This makes
+ * the viewfinder truly full-screen and prevents the bottom tab bar from
+ * overlapping the shutter button.
  */
 export function CameraCapture({ onCapture, onClose, onPickGallery }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -24,6 +25,20 @@ export function CameraCapture({ onCapture, onClose, onPickGallery }: Props) {
   const [starting, setStarting] = useState(true);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll while the viewfinder is open.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   const stopStream = useCallback(() => {
     const stream = streamRef.current;
@@ -117,8 +132,20 @@ export function CameraCapture({ onCapture, onClose, onPickGallery }: Props) {
     onPickGallery();
   }, [stopStream, onPickGallery]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black">
+  if (!mounted) return null;
+
+  // High-contrast text shadow for overlay labels against arbitrary video bg.
+  const textShadow = { textShadow: "0 1px 3px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.6)" };
+
+  const ui = (
+    <div
+      className="fixed inset-0 flex flex-col bg-black"
+      style={{ zIndex: 2147483647 }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Camera viewfinder"
+    >
+      {/* Live video feed */}
       <video
         ref={videoRef}
         playsInline
@@ -128,25 +155,32 @@ export function CameraCapture({ onCapture, onClose, onPickGallery }: Props) {
       />
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent p-4 pt-[max(1rem,env(safe-area-inset-top))]">
-        <Button
-          variant="ghost"
-          size="icon"
+      {/* Top letterbox bar (solid-ish for camera-app feel) */}
+      <div className="relative z-10 flex items-center justify-between bg-black/85 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <button
+          type="button"
           onClick={handleClose}
-          className="text-white hover:bg-white/10 hover:text-white"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/25 active:scale-95"
           aria-label="Close camera"
         >
-          <X className="h-6 w-6" />
-        </Button>
-        <p className="text-sm font-medium text-white/90">Frame your plant</p>
-        <div className="w-10" />
+          <X className="h-5 w-5" />
+        </button>
+        <p
+          className="text-base font-semibold tracking-wide text-white"
+          style={textShadow}
+        >
+          Frame your plant
+        </p>
+        <div className="h-10 w-10" aria-hidden />
       </div>
+
+      {/* Spacer that lets the video show through */}
+      <div className="relative z-0 flex-1" />
 
       {/* Loading / error overlay */}
       {(starting || error) && (
-        <div className="relative z-10 flex flex-1 items-center justify-center px-6">
-          <div className="max-w-sm rounded-2xl bg-background/95 p-5 text-center shadow-xl backdrop-blur">
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-6">
+          <div className="pointer-events-auto max-w-sm rounded-2xl bg-background/95 p-5 text-center shadow-xl backdrop-blur">
             {starting && !error ? (
               <>
                 <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-primary" />
@@ -175,18 +209,23 @@ export function CameraCapture({ onCapture, onClose, onPickGallery }: Props) {
         </div>
       )}
 
-      {/* Bottom controls */}
+      {/* Bottom letterbox + controls */}
       {!starting && !error && (
-        <div className="relative z-10 mt-auto flex items-center justify-between gap-4 bg-gradient-to-t from-black/80 to-transparent p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          <Button
-            variant="ghost"
-            size="icon"
+        <div
+          className="relative z-10 flex items-center justify-between gap-4 bg-black/85 px-6 pt-5"
+          style={{
+            // 32px (2rem) clearance above any phone gesture inset.
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 2rem)",
+          }}
+        >
+          <button
+            type="button"
             onClick={handleGallery}
-            className="h-12 w-12 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/25 active:scale-95"
             aria-label="Upload from gallery"
           >
             <ImageIcon className="h-5 w-5" />
-          </Button>
+          </button>
 
           <button
             type="button"
@@ -198,9 +237,11 @@ export function CameraCapture({ onCapture, onClose, onPickGallery }: Props) {
             <span className="block h-14 w-14 rounded-full bg-white" />
           </button>
 
-          <div className="h-12 w-12" />
+          <div className="h-12 w-12" aria-hidden />
         </div>
       )}
     </div>
   );
+
+  return createPortal(ui, document.body);
 }

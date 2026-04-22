@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Camera,
   Image as ImageIcon,
@@ -50,16 +50,6 @@ const EMPTY_STATE: WizardState = {
   fromAI: false,
 };
 
-const STORAGE_KEY = "ww_pending_plant";
-
-interface PendingState {
-  step: Step;
-  imageDataUrl: string | null;
-  imageMime: string;
-  wizard: WizardState;
-  fellBackToManual: boolean;
-}
-
 function AddPlant() {
   const navigate = useNavigate();
   const identifyFn = useServerFn(identifyPlant);
@@ -73,58 +63,6 @@ function AddPlant() {
   const [wizard, setWizard] = useState<WizardState>(EMPTY_STATE);
   const [fellBackToManual, setFellBackToManual] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  // Track whether we've completed the initial restore — so the persist effect
-  // doesn't wipe sessionStorage on the first render before restore lands.
-  const hydratedRef = useRef(false);
-
-  // Restore any pending plant state on mount — survives mobile camera tab restore.
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      hydratedRef.current = true;
-      return;
-    }
-    try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as PendingState;
-        if (parsed.step && parsed.step !== "capture") {
-          setStep(parsed.step);
-          setImageDataUrl(parsed.imageDataUrl);
-          setImageMime(parsed.imageMime);
-          setWizard(parsed.wizard);
-          setFellBackToManual(parsed.fellBackToManual);
-        }
-      }
-    } catch {
-      sessionStorage.removeItem(STORAGE_KEY);
-    }
-    hydratedRef.current = true;
-  }, []);
-
-  // Persist whenever the wizard/image state changes.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!hydratedRef.current) return; // wait for restore to settle
-    if (step === "capture") {
-      sessionStorage.removeItem(STORAGE_KEY);
-      return;
-    }
-    const persistableImage =
-      imageDataUrl && imageDataUrl.startsWith("data:") ? imageDataUrl : null;
-    const payload: PendingState = {
-      step,
-      imageDataUrl: persistableImage,
-      imageMime,
-      wizard,
-      fellBackToManual,
-    };
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    } catch {
-      // Quota exceeded — drop silently
-    }
-  }, [step, imageDataUrl, imageMime, wizard, fellBackToManual]);
 
   const runIdentify = useCallback(
     async (dataUrl: string, mimeType: string) => {
@@ -170,19 +108,24 @@ function AddPlant() {
         type: file.type,
         size: file.size,
       });
-      // Read straight to base64 — skip the intermediate object URL which can
-      // become invalid if Android Chrome suspends the tab while the camera is open.
+      const objectUrl = URL.createObjectURL(file);
+      setImageDataUrl(objectUrl);
+      setImageMime(file.type);
+      setFellBackToManual(false);
+      setStep("identifying");
+
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result as string;
         setImageDataUrl(dataUrl);
-        setImageMime(file.type);
-        setFellBackToManual(false);
-        setStep("identifying");
+        URL.revokeObjectURL(objectUrl);
         void runIdentify(dataUrl, file.type);
       };
       reader.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
         console.error("[add-plant] FileReader failed", reader.error);
+        setImageDataUrl(null);
+        setStep("capture");
         toast.error("Could not read photo — please try again");
       };
       reader.readAsDataURL(file);
@@ -194,9 +137,9 @@ function AddPlant() {
   const onInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = e.target.files?.[0];
+      if (f) handleFile(f);
       // Reset value so picking the same photo a second time still fires onChange.
       e.target.value = "";
-      if (f) handleFile(f);
     },
     [handleFile],
   );
@@ -287,7 +230,6 @@ function AddPlant() {
         return;
       }
       toast.success(`${wizard.name} added to your garden 🌱`);
-      if (typeof window !== "undefined") sessionStorage.removeItem(STORAGE_KEY);
       navigate({ to: "/inventory" });
     } finally {
       setSaving(false);

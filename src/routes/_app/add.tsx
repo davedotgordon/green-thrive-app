@@ -55,10 +55,10 @@ function AddPlant() {
   const navigate = useNavigate();
   const identifyFn = useServerFn(identifyPlant);
   const { profile } = useProfile();
-  const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<Step>("capture");
+  const [showCamera, setShowCamera] = useState(false);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [imageMime, setImageMime] = useState<string>("image/jpeg");
   const [wizard, setWizard] = useState<WizardState>(EMPTY_STATE);

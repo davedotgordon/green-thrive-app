@@ -134,7 +134,7 @@ function AddPlant() {
     [runIdentify],
   );
 
-  // Stable change handler shared by camera + gallery inputs.
+  // Stable change handler for the gallery input.
   const onInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = e.target.files?.[0];
@@ -144,6 +144,25 @@ function AddPlant() {
     },
     [handleFile],
   );
+
+  // Direct hand-off from the WebRTC viewfinder — already a JPEG data URL.
+  const handleCapturedDataUrl = useCallback(
+    (dataUrl: string, mimeType: string) => {
+      setShowCamera(false);
+      setImageDataUrl(dataUrl);
+      setImageMime(mimeType);
+      setFellBackToManual(false);
+      setStep("identifying");
+      void runIdentify(dataUrl, mimeType);
+    },
+    [runIdentify],
+  );
+
+  const openGallery = useCallback(() => {
+    setShowCamera(false);
+    // Defer so the input is mounted before we click it.
+    requestAnimationFrame(() => galleryInputRef.current?.click());
+  }, []);
 
   const startManual = () => {
     setImageDataUrl(null);
@@ -158,7 +177,6 @@ function AddPlant() {
     setWizard(EMPTY_STATE);
     setFellBackToManual(false);
     setStep("capture");
-    if (cameraInputRef.current) cameraInputRef.current.value = "";
     if (galleryInputRef.current) galleryInputRef.current.value = "";
   };
 

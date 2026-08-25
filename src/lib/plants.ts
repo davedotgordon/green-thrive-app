@@ -100,6 +100,38 @@ export function needsWateringToday(plant: Plant): boolean {
   return plant.next_watering_date <= todayISO();
 }
 
+/** Whole days between today and the plant's next watering date (negative = overdue). */
+export function daysUntilWatering(plant: Pick<Plant, "next_watering_date">): number | null {
+  if (!plant.next_watering_date) return 0;
+  const today = new Date(todayISO() + "T00:00:00").getTime();
+  const next = new Date(plant.next_watering_date + "T00:00:00").getTime();
+  return Math.round((next - today) / 86400000);
+}
+
+/** Human countdown: "Due today", "Due tomorrow", "Due in 3 days", "Overdue by 1 day". */
+export function wateringCountdownLabel(plant: Plant): string {
+  if (isRainDelayed(plant)) return "Rain delayed";
+  const d = daysUntilWatering(plant);
+  if (d === null) return "Due today";
+  if (d === 0) return "Due today";
+  if (d === 1) return "Due tomorrow";
+  if (d > 1) return `Due in ${d} days`;
+  const over = Math.abs(d);
+  return `Overdue by ${over} day${over === 1 ? "" : "s"}`;
+}
+
+/** Recompute the next watering date after a frequency change, anchored on last watered. */
+export function nextWateringFrom(
+  lastWatered: string | null,
+  frequencyDays: number,
+): string {
+  const anchor = lastWatered ?? todayISO();
+  const next = addDaysISO(anchor, frequencyDays);
+  // Never schedule in the past by more than the frequency: if the recomputed
+  // date has already passed, the plant is simply due now.
+  return next;
+}
+
 export function generateFamilyCode(): string {
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
   let code = "WIZ-";

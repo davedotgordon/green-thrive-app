@@ -23,6 +23,10 @@ export function PlantCard({ plant, onWater, variant = "dashboard" }: PlantCardPr
   const [justWatered, setJustWatered] = useState(false);
   const img = getPlantImage(plant);
   const rainDelayed = isRainDelayed(plant);
+  const days = daysUntilWatering(plant);
+  const overdue = !rainDelayed && days !== null && days < 0;
+  const dueNow = !rainDelayed && days === 0;
+  const countdown = wateringCountdownLabel(plant);
 
   const handleWater = async () => {
     if (!onWater || loading) return;

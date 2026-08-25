@@ -70,22 +70,28 @@ function Settings() {
 
   const toggleNotifications = async (next: boolean) => {
     if (next) {
-      const ok = await notifications.requestAndEnable();
-      if (ok) {
-        toast.success("Notifications enabled 🔔");
-        try {
-          new Notification("Water Wizard", {
-            body: "You'll get reminders when plants need watering.",
-          });
-        } catch {
-          /* some browsers block direct notifications */
-        }
-      } else if (notifications.permission === "denied") {
-        toast.error("Notifications are blocked in your browser settings");
-      }
+      const res = await notifications.enable(notifications.reminderHour);
+      if (res.ok) toast.success("Daily reminders enabled 🔔");
+      else toast.error(res.error ?? "Could not enable reminders");
     } else {
-      notifications.disable();
-      toast("Notifications turned off");
+      await notifications.disable();
+      toast("Daily reminders turned off");
+    }
+  };
+
+  const sendTest = async () => {
+    if (!notifications.endpoint) {
+      toast.error("Turn reminders on first");
+      return;
+    }
+    setTesting(true);
+    try {
+      await sendTestPushFn({ data: { endpoint: notifications.endpoint } });
+      toast.success("Test sent — check your notifications!");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Test failed");
+    } finally {
+      setTesting(false);
     }
   };
 

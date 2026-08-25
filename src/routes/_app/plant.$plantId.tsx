@@ -6,7 +6,8 @@ import {
   CalendarDays,
   CloudRain,
   Sparkles,
-  Trash2,
+  Archive,
+  RotateCcw,
   Loader2,
   RefreshCw,
 } from "lucide-react";
@@ -26,7 +27,8 @@ import {
   type Plant,
   type PlantExposure,
 } from "@/lib/plants";
-import { markPlantWatered } from "@/lib/watering";
+import { archivePlant, markPlantWatered, restorePlant } from "@/lib/watering";
+import { ArchivePlantDialog } from "@/components/ArchivePlantDialog";
 import { WateringIntensityLabel } from "@/components/WateringIntensityLabel";
 import { recalibratePlant } from "@/utils/recalibratePlant.functions";
 import { refreshAdvice } from "@/utils/refreshAdvice.functions";
@@ -59,7 +61,8 @@ function PlantDetail() {
   const [loading, setLoading] = useState(true);
   const [recalibrating, setRecalibrating] = useState(false);
   const [refreshingAdvice, setRefreshingAdvice] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [watering, setWatering] = useState(false);
 
   useEffect(() => {
@@ -195,18 +198,29 @@ function PlantDetail() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleArchive = async (reason: string | null) => {
     if (!plant) return;
-    if (!confirm(`Remove ${plant.name} from your garden?`)) return;
-    setDeleting(true);
-    const { error } = await supabase.from("plants").delete().eq("id", plant.id);
-    setDeleting(false);
-    if (error) {
-      toast.error("Could not delete plant");
-      return;
+    try {
+      await archivePlant(plant.id, reason);
+      toast.success(`${plant.name} moved to Garden History`);
+      navigate({ to: "/history" });
+    } catch {
+      toast.error("Could not archive plant");
     }
-    toast.success("Plant removed");
-    navigate({ to: "/inventory" });
+  };
+
+  const handleRestore = async () => {
+    if (!plant) return;
+    setRestoring(true);
+    try {
+      const patch = await restorePlant(plant);
+      setPlant({ ...plant, ...patch });
+      toast.success(`${plant.name} is back in your garden`);
+    } catch {
+      toast.error("Could not restore plant");
+    } finally {
+      setRestoring(false);
+    }
   };
 
   if (loading) {
@@ -229,6 +243,7 @@ function PlantDetail() {
 
   const img = getPlantImage(plant);
   const rainDelayed = isRainDelayed(plant);
+  const archived = Boolean(plant.archived_at);
 
   return (
     <div className="space-y-5">
@@ -245,6 +260,28 @@ function PlantDetail() {
         alt={plant.name}
         className="h-56 w-full rounded-2xl object-cover shadow-[var(--shadow-card)]"
       />
+
+      {archived && (
+        <Card className="flex flex-col gap-3 border-border/60 p-4">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-semibold">
+              <Archive className="h-4 w-4" /> Archived plant
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {plant.archived_reason ?? "Archived"} — it no longer appears in your garden
+              or reminders.
+            </p>
+          </div>
+          <Button onClick={handleRestore} disabled={restoring} variant="outline">
+            {restoring ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RotateCcw className="mr-2 h-4 w-4" />
+            )}
+            Restore to garden
+          </Button>
+        </Card>
+      )}
 
       <div>
         <h1 className="text-2xl font-bold">{plant.name}</h1>
@@ -367,17 +404,19 @@ function PlantDetail() {
 
       <Button
         variant="outline"
-        onClick={handleDelete}
-        disabled={deleting}
-        className="w-full text-destructive hover:text-destructive"
+        onClick={() => setArchiveOpen(true)}
+        className="w-full"
       >
-        {deleting ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Trash2 className="mr-2 h-4 w-4" />
-        )}
-        Remove plant
+        <Archive className="mr-2 h-4 w-4" />
+        Archive plant
       </Button>
+
+      <ArchivePlantDialog
+        open={archiveOpen}
+        onOpenChange={setArchiveOpen}
+        plantName={plant.name}
+        onConfirm={handleArchive}
+      />
     </div>
   );
 }

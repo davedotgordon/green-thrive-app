@@ -97,7 +97,7 @@ export function PlantCard({ plant, onWater, variant = "dashboard" }: PlantCardPr
       >
         {inner}
       </Link>
-      {variant === "dashboard" && (
+      {onWater && (
         <div className="px-3 pb-3">
           <Button
             onClick={handleWater}

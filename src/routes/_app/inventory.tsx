@@ -27,11 +27,13 @@ function Section({
   icon: Icon,
   plants,
   defaultOpen,
+  onWater,
 }: {
   title: string;
   icon: typeof Home;
   plants: Plant[];
   defaultOpen?: boolean;
+  onWater: (plant: Plant) => Promise<void>;
 }) {
   const [open, setOpen] = useState(defaultOpen ?? true);
   return (

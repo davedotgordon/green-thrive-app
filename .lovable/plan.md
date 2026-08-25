@@ -1,51 +1,28 @@
-# Daily watering notifications + true schedule reset
+# Plant Archive (remember past plants)
 
-## What's wrong today
+## Goal
 
-- Nothing ever sends a notification. The app only asks for permission and fires one test notification from Settings. There is no service worker, no web app manifest, and no scheduled job — so no daily reminder can ever arrive.
-- Watering dates: marking a plant watered on the dashboard does correctly reset the clock (last watered = today, next = today + frequency). But two gaps make it feel like a fixed "every X days" treadmill:
-  - Changing a plant's Indoor/Porch/Outdoor exposure recalculates the frequency but never recomputes the next watering date, so the plant keeps its old due date.
-  - Cards and the detail page display "every X days" instead of the actual countdown to the next watering.
-  - There is no "Mark as watered" button anywhere except the dashboard's due-today list, so a plant watered early can't be logged.
+When an annual dies or a plant is retired, archive it instead of deleting. Archived plants disappear from the dashboard, inventory, and reminders, but stay browsable in a "Garden History" view with the option to restore.
 
-## Answer to your question: it's just a webpage right now
+## What changes
 
-Confirmed by checking the project: there is no `manifest.json` / web app manifest and no app icons — `public/` contains only `favicon.ico`. That's exactly why you see the Chrome icon layered over the home-screen shortcut and why the permission is filed under Chrome: your phone saved a browser bookmark, not an installed app.
+### Archive instead of delete
+- The plant detail page's "Remove plant" button becomes "Archive plant", with a confirm dialog asking for an optional reason (Died, Gave away, Seasonal / annual ended, Other) and recording the date.
+- Permanent delete stays available, but only from inside the archived view, clearly marked as permanent.
 
-## What I'll build
+### Garden History view
+- New "History" screen listing archived plants, newest first, grouped by year archived.
+- Each entry shows the photo, name, how long it was in the garden (added → archived), and the reason.
+- Actions per entry: "Restore to garden" (returns it to inventory, next watering date reset to today + frequency) and "Delete forever".
+- Reached from the Plants screen via a link at the bottom ("Garden History — N past plants"); no new bottom-nav tab.
 
-### 0. Make it a real installable app (fixes the Chrome icon)
-
-- Add `public/manifest.webmanifest` with app name "Water Wizard", short name, `display: "standalone"`, theme color (the existing forest green `#4a8a5c`), and background color.
-- Generate proper app icons (192px, 512px, maskable, plus an `apple-touch-icon`) from the Water Wizard logo and place them in `public/`.
-- Link the manifest and icon tags from the root route head.
-- After this, re-adding to the home screen gives a real Water Wizard icon with no Chrome badge, and it launches full screen without browser chrome. Note: you'll need to remove the current shortcut and re-add it, since phones cache install metadata.
-
-
-
-### 1. Real daily push notifications
-
-- Add a web app manifest and a service worker so the app can receive push messages even when it's closed (on iPhone this only works after "Add to Home Screen", which the setup screen already walks through).
-- Store each device's push subscription in the backend, tied to the signed-in user.
-- Settings toggle: turning notifications on registers the device and subscribes; turning it off unsubscribes and removes the record.
-- A daily scheduled job runs each morning, finds every user with plants due for watering that day (skipping rain-delayed plants), and sends one summary push per device: e.g. "3 plants need water today — Monstera, Fern, Basil".
-- Tapping the notification opens the app's Today page.
-- Add a "Send me a test notification" button in Settings so delivery can be verified immediately instead of waiting a day.
-- Reminder time: default 8:00 AM in the user's local time, with a time picker in Settings.
-
-### 2. Watering schedule resets properly
-
-- Add a "Mark as Watered" button on the Plant Detail page and on inventory cards, using the same reset: last watered = today, next = today + frequency, rain delay cleared.
-- When a plant's frequency changes (exposure recalibration or AI recalibration), recompute the next watering date from the last watered date, not from the old due date.
-- Replace "every X days" on cards and the detail page with a live countdown driven by the next watering date: "Due today", "Due tomorrow", "In 4 days", "Overdue by 2 days". The frequency stays visible as secondary text.
-- Show "Last watered: <date>" on the detail page.
+### Everything else ignores archived plants
+- Dashboard due-today list, inventory sections, plant counts, and the daily push reminder job all filter archived plants out.
 
 ## Technical notes
 
-- New table `push_subscriptions` (user_id, endpoint, keys, reminder_hour, timezone) with RLS scoped to `auth.uid()` plus grants; service role reads it from the scheduled job.
-- `public/manifest.webmanifest` + `public/sw.js` registered from the root route; sw handles `push` and `notificationclick`.
-- Web Push uses VAPID keys generated during implementation and stored as backend secrets (public key exposed to the client, private key server-only).
-- Delivery endpoint: `src/routes/api/public/hooks/send-watering-reminders.ts`, authenticated with the anon key header, scheduled hourly by pg_cron so each user fires at their local reminder hour.
-- Due calculation reuses `needsWateringToday` from `src/lib/plants.ts`, ported to the server side so app and job agree.
-- Countdown helper `daysUntilWatering(plant)` added to `src/lib/plants.ts` and used by `PlantCard` and the detail page.
-- No changes to the camera, AI identification, or volume/intensity logic.
+- Migration on `public.plants`: add `archived_at timestamptz`, `archived_reason text`. Existing family RLS policies already cover reads/updates; no new policies needed. Add a partial index on `(family_id) where archived_at is null`.
+- Every existing `.from("plants").select(...)` query adds `.is("archived_at", null)`: `src/routes/_app/index.tsx`, `src/routes/_app/inventory.tsx`, and the reminder endpoint `src/routes/api/public/hooks/send-watering-reminders.ts`.
+- Archive/restore helpers live next to `markPlantWatered` in `src/lib/watering.ts`; restore uses `nextWateringFrom` from `src/lib/plants.ts`.
+- New route `src/routes/_app/history.tsx` with its own `head()` metadata; `Plant` type in `src/lib/plants.ts` gains the two fields.
+- Plant detail page keeps working for an archived plant (read-only banner + restore button) so old links don't break.

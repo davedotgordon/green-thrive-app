@@ -31,7 +31,11 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#4a8a5c" },
+      { name: "theme-color", content: "#1b3a2b" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Aloe" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { title: "Water Wizard" },
       { name: "description", content: "Keep your family's plants happy with simple watering reminders." },
       { property: "og:title", content: "Water Wizard" },

@@ -1,4 +1,4 @@
-/* Messaging service worker for Aloe watering reminders.
+/* Messaging service worker for Water Wizard watering reminders.
    This worker handles Web Push only — it does not cache the app shell. */
 
 self.addEventListener("install", () => {
@@ -14,10 +14,10 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data ? event.data.json() : {};
   } catch {
-    payload = { title: "Aloe", body: event.data ? event.data.text() : "" };
+    payload = { title: "Water Wizard", body: event.data ? event.data.text() : "" };
   }
 
-  const title = payload.title || "Aloe";
+  const title = payload.title || "Water Wizard";
   const options = {
     body: payload.body || "Some plants need water today.",
     icon: "/icon-192.png",

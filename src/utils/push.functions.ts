@@ -30,7 +30,7 @@ export const sendTestPush = createServerFn({ method: "POST" })
 
     const { sendWebPush } = await import("@/lib/webpush.server");
     const status = await sendWebPush(sub, {
-      title: "Aloe 🌿",
+      title: "Water Wizard 🌿",
       body: "Test notification — reminders are working!",
       url: "/",
       tag: "aloe-test",

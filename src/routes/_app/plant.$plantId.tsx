@@ -149,6 +149,20 @@ function PlantDetail() {
     }
   };
 
+  const handleMarkWatered = async () => {
+    if (!plant || watering) return;
+    setWatering(true);
+    try {
+      const patch = await markPlantWatered(plant);
+      setPlant({ ...plant, ...patch });
+      toast.success(`${plant.name} watered! 💧`);
+    } catch {
+      toast.error("Could not save that watering");
+    } finally {
+      setWatering(false);
+    }
+  };
+
   const handleRefreshAdvice = async () => {
     if (!plant || refreshingAdvice) return;
     setRefreshingAdvice(true);

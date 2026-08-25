@@ -36,6 +36,7 @@ function Dashboard() {
     const { data, error } = await supabase
       .from("plants")
       .select("*")
+      .is("archived_at", null)
       .order("next_watering_date", { ascending: true });
     if (error) {
       toast.error("Could not load plants");
@@ -66,6 +67,7 @@ function Dashboard() {
           const { data: outdoorPlants } = await supabase
             .from("plants")
             .select("id, exposure, rain_delay_until")
+            .is("archived_at", null)
             .eq("exposure", "outdoor");
           const toUpdate = (outdoorPlants ?? []).filter(
             (p) => !p.rain_delay_until || p.rain_delay_until < delayUntil,

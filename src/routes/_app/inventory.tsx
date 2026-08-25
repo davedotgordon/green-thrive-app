@@ -74,6 +74,7 @@ function Inventory() {
     supabase
       .from("plants")
       .select("*")
+      .is("archived_at", null)
       .order("name")
       .then(({ data, error }) => {
         if (error) toast.error("Could not load plants");

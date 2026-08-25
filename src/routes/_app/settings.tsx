@@ -10,6 +10,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { sendTestPush } from "@/utils/push.functions";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({

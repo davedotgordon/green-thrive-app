@@ -129,6 +129,21 @@ function Inventory() {
           />
         </div>
       )}
+
+      <Link
+        to="/history"
+        className="flex items-center justify-between rounded-2xl bg-card px-4 py-3 text-sm shadow-[var(--shadow-soft)] ring-1 ring-border/60 transition hover:bg-accent/40"
+      >
+        <span className="flex items-center gap-2 font-medium">
+          <Archive className="h-4 w-4 text-muted-foreground" />
+          Garden History
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {archivedCount === null
+            ? ""
+            : `${archivedCount} past plant${archivedCount === 1 ? "" : "s"}`}
+        </span>
+      </Link>
     </div>
   );
 }

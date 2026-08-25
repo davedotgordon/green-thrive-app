@@ -297,11 +297,18 @@ function PlantDetail() {
             </p>
           </div>
         </div>
-        {plant.next_watering_date && (
-          <p className="text-xs text-muted-foreground">
-            Next watering: <span className="font-medium text-foreground">{plant.next_watering_date}</span>
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground">{wateringCountdownLabel(plant)}</span>
+          {plant.next_watering_date ? ` · next on ${plant.next_watering_date}` : ""}
+        </p>
+        <Button
+          onClick={handleMarkWatered}
+          disabled={watering}
+          className="h-11 w-full rounded-xl bg-water font-semibold text-water-foreground hover:bg-water/90"
+        >
+          <Droplets className="mr-2 h-5 w-5" />
+          {watering ? "Saving..." : "Mark as Watered"}
+        </Button>
       </Card>
 
       <Card className="space-y-3 p-4">

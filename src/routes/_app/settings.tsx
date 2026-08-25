@@ -29,6 +29,8 @@ function Settings() {
   const [city, setCity] = useState("");
   const [zip, setZip] = useState("");
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const sendTestPushFn = useServerFn(sendTestPush);
 
   useEffect(() => {
     if (profile) {

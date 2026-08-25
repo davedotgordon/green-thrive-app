@@ -40,7 +40,11 @@ export const Route = createFileRoute("/api/public/hooks/send-watering-reminders"
         const apikey =
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace("Bearer ", "");
-        if (!apikey || apikey !== process.env["SUPABASE_ANON_KEY"]) {
+        const allowed = [
+          process.env["SUPABASE_ANON_KEY"],
+          process.env["SUPABASE_PUBLISHABLE_KEY"],
+        ].filter(Boolean);
+        if (!apikey || !allowed.includes(apikey)) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
             status: 401,
             headers: { "Content-Type": "application/json" },

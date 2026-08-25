@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import type { Plant } from "@/lib/plants";
+import { markPlantWatered } from "@/lib/watering";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/inventory")({

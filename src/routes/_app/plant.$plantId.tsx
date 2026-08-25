@@ -90,6 +90,11 @@ function PlantDetail() {
         },
       });
 
+      const recomputedNext = nextWateringFrom(
+        plant.last_watered_date,
+        rec.watering_frequency_days,
+      );
+
       const { error } = await supabase
         .from("plants")
         .update({
@@ -97,6 +102,7 @@ function PlantDetail() {
           location: next === "indoor" ? "indoor" : "outdoor",
           watering_frequency_days: rec.watering_frequency_days,
           watering_volume: rec.watering_volume_ml,
+          next_watering_date: recomputedNext,
           // Outdoor plants might already have a rain delay — clear when the
           // user explicitly moves them inside/porch.
           rain_delay_until: next === "outdoor" ? plant.rain_delay_until : null,
@@ -115,6 +121,7 @@ function PlantDetail() {
         location: next === "indoor" ? "indoor" : "outdoor",
         watering_frequency_days: rec.watering_frequency_days,
         watering_volume: rec.watering_volume_ml,
+        next_watering_date: recomputedNext,
         rain_delay_until: next === "outdoor" ? plant.rain_delay_until : null,
       });
       toast.success(rec.rationale || "Schedule recalibrated");

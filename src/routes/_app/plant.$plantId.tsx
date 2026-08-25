@@ -21,9 +21,12 @@ import {
   getPlantImage,
   intensityFromVolume,
   isRainDelayed,
+  nextWateringFrom,
+  wateringCountdownLabel,
   type Plant,
   type PlantExposure,
 } from "@/lib/plants";
+import { markPlantWatered } from "@/lib/watering";
 import { WateringIntensityLabel } from "@/components/WateringIntensityLabel";
 import { recalibratePlant } from "@/utils/recalibratePlant.functions";
 import { refreshAdvice } from "@/utils/refreshAdvice.functions";

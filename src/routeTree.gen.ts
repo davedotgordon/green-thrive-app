@@ -18,6 +18,7 @@ import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
 import { Route as AppAddRouteImport } from './routes/_app/add'
 import { Route as AppPlantPlantIdRouteImport } from './routes/_app/plant.$plantId'
+import { Route as ApiPublicHooksSendWateringRemindersRouteImport } from './routes/api/public/hooks/send-watering-reminders'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -63,6 +64,12 @@ const AppPlantPlantIdRoute = AppPlantPlantIdRouteImport.update({
   path: '/plant/$plantId',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicHooksSendWateringRemindersRoute =
+  ApiPublicHooksSendWateringRemindersRouteImport.update({
+    id: '/api/public/hooks/send-watering-reminders',
+    path: '/api/public/hooks/send-watering-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/setup': typeof AppSetupRoute
   '/welcome': typeof AppWelcomeRoute
   '/plant/$plantId': typeof AppPlantPlantIdRoute
+  '/api/public/hooks/send-watering-reminders': typeof ApiPublicHooksSendWateringRemindersRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -83,6 +91,7 @@ export interface FileRoutesByTo {
   '/welcome': typeof AppWelcomeRoute
   '/': typeof AppIndexRoute
   '/plant/$plantId': typeof AppPlantPlantIdRoute
+  '/api/public/hooks/send-watering-reminders': typeof ApiPublicHooksSendWateringRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +104,7 @@ export interface FileRoutesById {
   '/_app/welcome': typeof AppWelcomeRoute
   '/_app/': typeof AppIndexRoute
   '/_app/plant/$plantId': typeof AppPlantPlantIdRoute
+  '/api/public/hooks/send-watering-reminders': typeof ApiPublicHooksSendWateringRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/welcome'
     | '/plant/$plantId'
+    | '/api/public/hooks/send-watering-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/'
     | '/plant/$plantId'
+    | '/api/public/hooks/send-watering-reminders'
   id:
     | '__root__'
     | '/_app'
@@ -128,11 +140,13 @@ export interface FileRouteTypes {
     | '/_app/welcome'
     | '/_app/'
     | '/_app/plant/$plantId'
+    | '/api/public/hooks/send-watering-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicHooksSendWateringRemindersRoute: typeof ApiPublicHooksSendWateringRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -200,6 +214,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPlantPlantIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/hooks/send-watering-reminders': {
+      id: '/api/public/hooks/send-watering-reminders'
+      path: '/api/public/hooks/send-watering-reminders'
+      fullPath: '/api/public/hooks/send-watering-reminders'
+      preLoaderRoute: typeof ApiPublicHooksSendWateringRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -228,6 +249,8 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicHooksSendWateringRemindersRoute:
+    ApiPublicHooksSendWateringRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

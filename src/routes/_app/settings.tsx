@@ -10,6 +10,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { sendTestPush } from "@/utils/push.functions";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({
@@ -29,6 +31,8 @@ function Settings() {
   const [city, setCity] = useState("");
   const [zip, setZip] = useState("");
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const sendTestPushFn = useServerFn(sendTestPush);
 
   useEffect(() => {
     if (profile) {
@@ -70,22 +74,28 @@ function Settings() {
 
   const toggleNotifications = async (next: boolean) => {
     if (next) {
-      const ok = await notifications.requestAndEnable();
-      if (ok) {
-        toast.success("Notifications enabled 🔔");
-        try {
-          new Notification("Water Wizard", {
-            body: "You'll get reminders when plants need watering.",
-          });
-        } catch {
-          /* some browsers block direct notifications */
-        }
-      } else if (notifications.permission === "denied") {
-        toast.error("Notifications are blocked in your browser settings");
-      }
+      const res = await notifications.enable(notifications.reminderHour);
+      if (res.ok) toast.success("Daily reminders enabled 🔔");
+      else toast.error(res.error ?? "Could not enable reminders");
     } else {
-      notifications.disable();
-      toast("Notifications turned off");
+      await notifications.disable();
+      toast("Daily reminders turned off");
+    }
+  };
+
+  const sendTest = async () => {
+    if (!notifications.endpoint) {
+      toast.error("Turn reminders on first");
+      return;
+    }
+    setTesting(true);
+    try {
+      await sendTestPushFn({ data: { endpoint: notifications.endpoint } });
+      toast.success("Test sent — check your notifications!");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Test failed");
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -183,11 +193,44 @@ function Settings() {
             checked={notifications.enabled}
             onCheckedChange={toggleNotifications}
             disabled={
-              !notifications.supported || notifications.permission === "denied"
+              !notifications.supported ||
+              notifications.busy ||
+              notifications.permission === "denied"
             }
             aria-label="Toggle notifications"
           />
         </div>
+
+        {notifications.enabled && (
+          <div className="space-y-3 border-t border-border/60 pt-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="reminder-time">Daily summary time</Label>
+              <Input
+                id="reminder-time"
+                type="time"
+                step={3600}
+                value={`${String(notifications.reminderHour).padStart(2, "0")}:00`}
+                onChange={(e) => {
+                  const hour = parseInt(e.target.value.split(":")[0] ?? "8", 10);
+                  if (!Number.isNaN(hour)) void notifications.updateHour(hour);
+                }}
+                className="h-11"
+              />
+              <p className="text-xs text-muted-foreground">
+                You'll get one summary each morning listing the plants due that day.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={sendTest}
+              disabled={testing}
+              className="h-11 w-full"
+            >
+              {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bell className="mr-2 h-4 w-4" />}
+              Send test notification
+            </Button>
+          </div>
+        )}
       </Card>
 
       {profile?.family_id && (

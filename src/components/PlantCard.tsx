@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
+  daysUntilWatering,
   getPlantImage,
   intensityFromVolume,
   isRainDelayed,
+  wateringCountdownLabel,
   type Plant,
 } from "@/lib/plants";
 import { WateringIntensityLabel } from "@/components/WateringIntensityLabel";
@@ -23,6 +25,10 @@ export function PlantCard({ plant, onWater, variant = "dashboard" }: PlantCardPr
   const [justWatered, setJustWatered] = useState(false);
   const img = getPlantImage(plant);
   const rainDelayed = isRainDelayed(plant);
+  const days = daysUntilWatering(plant);
+  const overdue = !rainDelayed && days !== null && days < 0;
+  const dueNow = !rainDelayed && days === 0;
+  const countdown = wateringCountdownLabel(plant);
 
   const handleWater = async () => {
     if (!onWater || loading) return;
@@ -59,10 +65,18 @@ export function PlantCard({ plant, onWater, variant = "dashboard" }: PlantCardPr
         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
           <Droplets className="h-3.5 w-3.5" />
           <WateringIntensityLabel intensity={intensityFromVolume(plant.watering_volume)} />
-          <span>
-            every {plant.watering_frequency_days} day
-            {plant.watering_frequency_days === 1 ? "" : "s"}
+          <span
+            className={cn(
+              "font-medium",
+              overdue ? "text-destructive" : dueNow ? "text-water" : "text-muted-foreground",
+            )}
+          >
+            {countdown}
           </span>
+        </p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground/80">
+          Every {plant.watering_frequency_days} day
+          {plant.watering_frequency_days === 1 ? "" : "s"}
         </p>
       </div>
       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -83,7 +97,7 @@ export function PlantCard({ plant, onWater, variant = "dashboard" }: PlantCardPr
       >
         {inner}
       </Link>
-      {variant === "dashboard" && (
+      {onWater && (
         <div className="px-3 pb-3">
           <Button
             onClick={handleWater}

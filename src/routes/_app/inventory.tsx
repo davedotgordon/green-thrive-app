@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import type { Plant } from "@/lib/plants";
+import { markPlantWatered } from "@/lib/watering";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/inventory")({
@@ -27,11 +28,13 @@ function Section({
   icon: Icon,
   plants,
   defaultOpen,
+  onWater,
 }: {
   title: string;
   icon: typeof Home;
   plants: Plant[];
   defaultOpen?: boolean;
+  onWater: (plant: Plant) => Promise<void>;
 }) {
   const [open, setOpen] = useState(defaultOpen ?? true);
   return (
@@ -54,7 +57,9 @@ function Section({
         {plants.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-muted-foreground">No plants here yet.</p>
         ) : (
-          plants.map((p) => <PlantCard key={p.id} plant={p} variant="inventory" />)
+          plants.map((p) => (
+            <PlantCard key={p.id} plant={p} variant="inventory" onWater={onWater} />
+          ))
         )}
       </CollapsibleContent>
     </Collapsible>
@@ -81,6 +86,16 @@ function Inventory() {
   const porch = useMemo(() => plants.filter((p) => p.exposure === "porch"), [plants]);
   const outdoor = useMemo(() => plants.filter((p) => p.exposure === "outdoor"), [plants]);
 
+  const handleWater = async (plant: Plant) => {
+    try {
+      const patch = await markPlantWatered(plant);
+      setPlants((prev) => prev.map((p) => (p.id === plant.id ? { ...p, ...patch } : p)));
+      toast.success(`${plant.name} watered!`);
+    } catch {
+      toast.error("Could not save that watering");
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div>
@@ -96,9 +111,21 @@ function Inventory() {
         </div>
       ) : (
         <div className="space-y-5">
-          <Section title="Indoor" icon={Home} plants={indoor} defaultOpen />
-          <Section title="Porch (Covered)" icon={Umbrella} plants={porch} defaultOpen />
-          <Section title="Outdoor (Exposed)" icon={TreePine} plants={outdoor} defaultOpen />
+          <Section title="Indoor" icon={Home} plants={indoor} defaultOpen onWater={handleWater} />
+          <Section
+            title="Porch (Covered)"
+            icon={Umbrella}
+            plants={porch}
+            defaultOpen
+            onWater={handleWater}
+          />
+          <Section
+            title="Outdoor (Exposed)"
+            icon={TreePine}
+            plants={outdoor}
+            defaultOpen
+            onWater={handleWater}
+          />
         </div>
       )}
     </div>

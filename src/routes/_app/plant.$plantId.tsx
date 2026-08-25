@@ -21,9 +21,12 @@ import {
   getPlantImage,
   intensityFromVolume,
   isRainDelayed,
+  nextWateringFrom,
+  wateringCountdownLabel,
   type Plant,
   type PlantExposure,
 } from "@/lib/plants";
+import { markPlantWatered } from "@/lib/watering";
 import { WateringIntensityLabel } from "@/components/WateringIntensityLabel";
 import { recalibratePlant } from "@/utils/recalibratePlant.functions";
 import { refreshAdvice } from "@/utils/refreshAdvice.functions";
@@ -57,6 +60,7 @@ function PlantDetail() {
   const [recalibrating, setRecalibrating] = useState(false);
   const [refreshingAdvice, setRefreshingAdvice] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [watering, setWatering] = useState(false);
 
   useEffect(() => {
     supabase
@@ -90,6 +94,11 @@ function PlantDetail() {
         },
       });
 
+      const recomputedNext = nextWateringFrom(
+        plant.last_watered_date,
+        rec.watering_frequency_days,
+      );
+
       const { error } = await supabase
         .from("plants")
         .update({
@@ -97,6 +106,7 @@ function PlantDetail() {
           location: next === "indoor" ? "indoor" : "outdoor",
           watering_frequency_days: rec.watering_frequency_days,
           watering_volume: rec.watering_volume_ml,
+          next_watering_date: recomputedNext,
           // Outdoor plants might already have a rain delay — clear when the
           // user explicitly moves them inside/porch.
           rain_delay_until: next === "outdoor" ? plant.rain_delay_until : null,
@@ -115,6 +125,7 @@ function PlantDetail() {
         location: next === "indoor" ? "indoor" : "outdoor",
         watering_frequency_days: rec.watering_frequency_days,
         watering_volume: rec.watering_volume_ml,
+        next_watering_date: recomputedNext,
         rain_delay_until: next === "outdoor" ? plant.rain_delay_until : null,
       });
       toast.success(rec.rationale || "Schedule recalibrated");
@@ -136,6 +147,20 @@ function PlantDetail() {
       }
     } finally {
       setRecalibrating(false);
+    }
+  };
+
+  const handleMarkWatered = async () => {
+    if (!plant || watering) return;
+    setWatering(true);
+    try {
+      const patch = await markPlantWatered(plant);
+      setPlant({ ...plant, ...patch });
+      toast.success(`${plant.name} watered! 💧`);
+    } catch {
+      toast.error("Could not save that watering");
+    } finally {
+      setWatering(false);
     }
   };
 
@@ -287,11 +312,18 @@ function PlantDetail() {
             </p>
           </div>
         </div>
-        {plant.next_watering_date && (
-          <p className="text-xs text-muted-foreground">
-            Next watering: <span className="font-medium text-foreground">{plant.next_watering_date}</span>
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground">{wateringCountdownLabel(plant)}</span>
+          {plant.next_watering_date ? ` · next on ${plant.next_watering_date}` : ""}
+        </p>
+        <Button
+          onClick={handleMarkWatered}
+          disabled={watering}
+          className="h-11 w-full rounded-xl bg-water font-semibold text-water-foreground hover:bg-water/90"
+        >
+          <Droplets className="mr-2 h-5 w-5" />
+          {watering ? "Saving..." : "Mark as Watered"}
+        </Button>
       </Card>
 
       <Card className="space-y-3 p-4">

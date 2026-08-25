@@ -60,6 +60,7 @@ function PlantDetail() {
   const [recalibrating, setRecalibrating] = useState(false);
   const [refreshingAdvice, setRefreshingAdvice] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [watering, setWatering] = useState(false);
 
   useEffect(() => {
     supabase

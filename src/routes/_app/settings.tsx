@@ -189,11 +189,44 @@ function Settings() {
             checked={notifications.enabled}
             onCheckedChange={toggleNotifications}
             disabled={
-              !notifications.supported || notifications.permission === "denied"
+              !notifications.supported ||
+              notifications.busy ||
+              notifications.permission === "denied"
             }
             aria-label="Toggle notifications"
           />
         </div>
+
+        {notifications.enabled && (
+          <div className="space-y-3 border-t border-border/60 pt-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="reminder-time">Daily summary time</Label>
+              <Input
+                id="reminder-time"
+                type="time"
+                step={3600}
+                value={`${String(notifications.reminderHour).padStart(2, "0")}:00`}
+                onChange={(e) => {
+                  const hour = parseInt(e.target.value.split(":")[0] ?? "8", 10);
+                  if (!Number.isNaN(hour)) void notifications.updateHour(hour);
+                }}
+                className="h-11"
+              />
+              <p className="text-xs text-muted-foreground">
+                You'll get one summary each morning listing the plants due that day.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={sendTest}
+              disabled={testing}
+              className="h-11 w-full"
+            >
+              {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bell className="mr-2 h-4 w-4" />}
+              Send test notification
+            </Button>
+          </div>
+        )}
       </Card>
 
       {profile?.family_id && (

@@ -56,7 +56,9 @@ function Section({
         {plants.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-muted-foreground">No plants here yet.</p>
         ) : (
-          plants.map((p) => <PlantCard key={p.id} plant={p} variant="inventory" />)
+          plants.map((p) => (
+            <PlantCard key={p.id} plant={p} variant="inventory" onWater={onWater} />
+          ))
         )}
       </CollapsibleContent>
     </Collapsible>

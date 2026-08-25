@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Home, TreePine, Umbrella } from "lucide-react";
+import { Archive, ChevronDown, Home, TreePine, Umbrella } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PlantCard } from "@/components/PlantCard";
 import {
@@ -69,8 +69,15 @@ function Section({
 function Inventory() {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [archivedCount, setArchivedCount] = useState<number | null>(null);
 
   useEffect(() => {
+    supabase
+      .from("plants")
+      .select("id", { count: "exact", head: true })
+      .not("archived_at", "is", null)
+      .then(({ count }) => setArchivedCount(count ?? 0));
+
     supabase
       .from("plants")
       .select("*")

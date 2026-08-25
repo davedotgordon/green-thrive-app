@@ -8,7 +8,20 @@
   - Cards and the detail page display "every X days" instead of the actual countdown to the next watering.
   - There is no "Mark as watered" button anywhere except the dashboard's due-today list, so a plant watered early can't be logged.
 
+## Answer to your question: it's just a webpage right now
+
+Confirmed by checking the project: there is no `manifest.json` / web app manifest and no app icons — `public/` contains only `favicon.ico`. That's exactly why you see the Chrome icon layered over the home-screen shortcut and why the permission is filed under Chrome: your phone saved a browser bookmark, not an installed app.
+
 ## What I'll build
+
+### 0. Make it a real installable app (fixes the Chrome icon)
+
+- Add `public/manifest.webmanifest` with app name "Water Wizard", short name, `display: "standalone"`, theme color (the existing forest green `#4a8a5c`), and background color.
+- Generate proper app icons (192px, 512px, maskable, plus an `apple-touch-icon`) from the Water Wizard logo and place them in `public/`.
+- Link the manifest and icon tags from the root route head.
+- After this, re-adding to the home screen gives a real Water Wizard icon with no Chrome badge, and it launches full screen without browser chrome. Note: you'll need to remove the current shortcut and re-add it, since phones cache install metadata.
+
+
 
 ### 1. Real daily push notifications
 

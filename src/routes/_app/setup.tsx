@@ -42,7 +42,7 @@ function detectDevice(): DeviceKind {
 
 function AppSetup() {
   const navigate = useNavigate();
-  const { permission, supported, enabled, requestAndEnable } = useNotifications();
+  const { permission, supported, enabled, enable } = useNotifications();
   const [requesting, setRequesting] = useState(false);
   const [device, setDevice] = useState<DeviceKind>("desktop");
 

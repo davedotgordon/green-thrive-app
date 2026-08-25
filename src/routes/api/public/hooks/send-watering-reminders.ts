@@ -93,6 +93,7 @@ export const Route = createFileRoute("/api/public/hooks/send-watering-reminders"
           const { data: plants } = await supabase
             .from("plants")
             .select("name, next_watering_date, rain_delay_until")
+            .is("archived_at", null)
             .eq("family_id", profile.family_id);
 
           const due = (plants ?? []).filter(

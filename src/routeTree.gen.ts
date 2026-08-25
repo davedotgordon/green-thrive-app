@@ -16,6 +16,7 @@ import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppSetupRouteImport } from './routes/_app/setup'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppInventoryRouteImport } from './routes/_app/inventory'
+import { Route as AppHistoryRouteImport } from './routes/_app/history'
 import { Route as AppAddRouteImport } from './routes/_app/add'
 import { Route as AppPlantPlantIdRouteImport } from './routes/_app/plant.$plantId'
 import { Route as ApiPublicHooksSendWateringRemindersRouteImport } from './routes/api/public/hooks/send-watering-reminders'
@@ -54,6 +55,11 @@ const AppInventoryRoute = AppInventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => AppRoute,
 } as any)
+const AppHistoryRoute = AppHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAddRoute = AppAddRouteImport.update({
   id: '/add',
   path: '/add',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/add': typeof AppAddRoute
+  '/history': typeof AppHistoryRoute
   '/inventory': typeof AppInventoryRoute
   '/settings': typeof AppSettingsRoute
   '/setup': typeof AppSetupRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/add': typeof AppAddRoute
+  '/history': typeof AppHistoryRoute
   '/inventory': typeof AppInventoryRoute
   '/settings': typeof AppSettingsRoute
   '/setup': typeof AppSetupRoute
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/add': typeof AppAddRoute
+  '/_app/history': typeof AppHistoryRoute
   '/_app/inventory': typeof AppInventoryRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/setup': typeof AppSetupRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/add'
+    | '/history'
     | '/inventory'
     | '/settings'
     | '/setup'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/add'
+    | '/history'
     | '/inventory'
     | '/settings'
     | '/setup'
@@ -134,6 +145,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/_app/add'
+    | '/_app/history'
     | '/_app/inventory'
     | '/_app/settings'
     | '/_app/setup'
@@ -200,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInventoryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/history': {
+      id: '/_app/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof AppHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/add': {
       id: '/_app/add'
       path: '/add'
@@ -226,6 +245,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAddRoute: typeof AppAddRoute
+  AppHistoryRoute: typeof AppHistoryRoute
   AppInventoryRoute: typeof AppInventoryRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSetupRoute: typeof AppSetupRoute
@@ -236,6 +256,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAddRoute: AppAddRoute,
+  AppHistoryRoute: AppHistoryRoute,
   AppInventoryRoute: AppInventoryRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSetupRoute: AppSetupRoute,

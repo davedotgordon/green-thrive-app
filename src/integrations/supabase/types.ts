@@ -17,6 +17,8 @@ export type Database = {
       plants: {
         Row: {
           ai_care_instructions: string | null
+          archived_at: string | null
+          archived_reason: string | null
           created_at: string
           establishment_level: Database["public"]["Enums"]["establishment_level"]
           exposure: Database["public"]["Enums"]["plant_exposure"]
@@ -35,6 +37,8 @@ export type Database = {
         }
         Insert: {
           ai_care_instructions?: string | null
+          archived_at?: string | null
+          archived_reason?: string | null
           created_at?: string
           establishment_level?: Database["public"]["Enums"]["establishment_level"]
           exposure?: Database["public"]["Enums"]["plant_exposure"]
@@ -53,6 +57,8 @@ export type Database = {
         }
         Update: {
           ai_care_instructions?: string | null
+          archived_at?: string | null
+          archived_reason?: string | null
           created_at?: string
           establishment_level?: Database["public"]["Enums"]["establishment_level"]
           exposure?: Database["public"]["Enums"]["plant_exposure"]

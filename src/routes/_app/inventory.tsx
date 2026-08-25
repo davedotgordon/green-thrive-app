@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Home, TreePine, Umbrella } from "lucide-react";
+import { Archive, ChevronDown, Home, TreePine, Umbrella } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PlantCard } from "@/components/PlantCard";
 import {
@@ -69,11 +69,19 @@ function Section({
 function Inventory() {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [archivedCount, setArchivedCount] = useState<number | null>(null);
 
   useEffect(() => {
     supabase
       .from("plants")
+      .select("id", { count: "exact", head: true })
+      .not("archived_at", "is", null)
+      .then(({ count }) => setArchivedCount(count ?? 0));
+
+    supabase
+      .from("plants")
       .select("*")
+      .is("archived_at", null)
       .order("name")
       .then(({ data, error }) => {
         if (error) toast.error("Could not load plants");
@@ -128,6 +136,21 @@ function Inventory() {
           />
         </div>
       )}
+
+      <Link
+        to="/history"
+        className="flex items-center justify-between rounded-2xl bg-card px-4 py-3 text-sm shadow-[var(--shadow-soft)] ring-1 ring-border/60 transition hover:bg-accent/40"
+      >
+        <span className="flex items-center gap-2 font-medium">
+          <Archive className="h-4 w-4 text-muted-foreground" />
+          Garden History
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {archivedCount === null
+            ? ""
+            : `${archivedCount} past plant${archivedCount === 1 ? "" : "s"}`}
+        </span>
+      </Link>
     </div>
   );
 }

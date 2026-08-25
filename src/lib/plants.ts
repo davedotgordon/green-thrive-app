@@ -45,7 +45,18 @@ export interface Plant {
   rain_delay_until: string | null;
   family_id: string | null;
   ai_care_instructions?: string | null;
+  archived_at?: string | null;
+  archived_reason?: string | null;
+  created_at?: string | null;
 }
+
+export const ARCHIVE_REASONS = [
+  "Died",
+  "Gave away",
+  "Seasonal / annual ended",
+  "Other",
+] as const;
+export type ArchiveReason = (typeof ARCHIVE_REASONS)[number];
 
 // Cities where the heat-boost (+25% volume) applies for outdoor/porch plants
 const HOT_CITY_KEYWORDS = [

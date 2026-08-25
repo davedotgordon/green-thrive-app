@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
+  daysUntilWatering,
   getPlantImage,
   intensityFromVolume,
   isRainDelayed,
+  wateringCountdownLabel,
   type Plant,
 } from "@/lib/plants";
 import { WateringIntensityLabel } from "@/components/WateringIntensityLabel";

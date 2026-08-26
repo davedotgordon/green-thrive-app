@@ -74,7 +74,9 @@ export const Route = createFileRoute("/api/public/hooks/send-watering-reminders"
 
         for (const sub of subs ?? []) {
           const { hour, date } = localParts(sub.timezone);
-          if (hour !== sub.reminder_hour || sub.last_sent_date === date) {
+          // Fire as soon as the local time has reached the requested hour,
+          // once per local day. Tolerates missed/late cron ticks.
+          if (hour < sub.reminder_hour || sub.last_sent_date === date) {
             skipped++;
             continue;
           }

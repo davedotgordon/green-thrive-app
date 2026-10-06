@@ -68,6 +68,32 @@ export const Route = createFileRoute("/api/public/hooks/send-watering-reminders"
           });
         }
 
+        // Daily weather pass per family (rain delay + move suggestions), once per local day,
+        // from 5am local so it lands before typical reminder times.
+        const { data: zipProfiles } = await supabase
+          .from("profiles")
+          .select("id, family_id, zip")
+          .not("family_id", "is", null)
+          .not("zip", "is", null);
+        const { data: weatherRows } = await supabase
+          .from("family_weather")
+          .select("family_id, checked_date");
+        const checked = new Map((weatherRows ?? []).map((w) => [w.family_id, w.checked_date]));
+        const tzByUser = new Map((subs ?? []).map((s) => [s.user_id, s.timezone]));
+        const doneFamilies = new Set<string>();
+        for (const pr of zipProfiles ?? []) {
+          const fam = pr.family_id!;
+          if (doneFamilies.has(fam) || !/^\d{5}$/.test(pr.zip ?? "")) continue;
+          const { hour, date } = localParts(tzByUser.get(pr.id) ?? "America/New_York");
+          if (hour < 5 || checked.get(fam) === date) continue;
+          doneFamilies.add(fam);
+          try {
+            await runFamilyWeather(supabase, fam, pr.zip!, date);
+          } catch (e) {
+            console.error("weather pass failed", fam, e);
+          }
+        }
+
         let sent = 0;
         let skipped = 0;
         const removed: string[] = [];

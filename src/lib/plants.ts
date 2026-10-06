@@ -48,6 +48,11 @@ export interface Plant {
   archived_at?: string | null;
   archived_reason?: string | null;
   created_at?: string | null;
+  min_temp_f?: number | null;
+  outdoor_exposure?: PlantExposure | null;
+  move_suggestion?: "indoor" | "outdoor" | null;
+  move_reason?: string | null;
+  move_suggested_date?: string | null;
 }
 
 export const ARCHIVE_REASONS = [

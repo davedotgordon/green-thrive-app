@@ -5,11 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { PlantCard } from "@/components/PlantCard";
 import { useProfile } from "@/hooks/useProfile";
 import { useServerFn } from "@tanstack/react-start";
-import { getWeatherForZip } from "@/utils/weather.functions";
+import { recalibratePlant } from "@/utils/recalibratePlant.functions";
+import { MoveTaskCard } from "@/components/MoveTaskCard";
+import { exposureTrackingPatch, moveTarget } from "@/lib/watering";
 import {
   addDaysISO,
   greetingForHour,
   needsWateringToday,
+  nextWateringFrom,
   todayISO,
   type Plant,
 } from "@/lib/plants";
@@ -27,7 +30,7 @@ export const Route = createFileRoute("/_app/")({
 
 function Dashboard() {
   const { profile } = useProfile();
-  const weatherFn = useServerFn(getWeatherForZip);
+  const recalibrateFn = useServerFn(recalibratePlant);
   const [plants, setPlants] = useState<Plant[]>([]);
   const [loading, setLoading] = useState(true);
   const [rainfall, setRainfall] = useState<number | null>(null);
@@ -50,53 +53,56 @@ function Dashboard() {
     load();
   }, []);
 
-  // Weather check + auto rain delay for outdoor plants
+  // Rain/forecast come from the daily backend weather pass
   useEffect(() => {
-    if (!profile?.zip) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const wx = await weatherFn({ data: { zip: profile.zip! } });
-        if (cancelled) return;
-        setRainfall(wx.rainfallInchesLast24h);
-
-        if (wx.rainfallInchesLast24h > 0.5) {
-          // Snooze outdoor (exposed) plants 48h
-          const today = todayISO();
-          const delayUntil = addDaysISO(today, 2);
-          const { data: outdoorPlants } = await supabase
-            .from("plants")
-            .select("id, exposure, rain_delay_until")
-            .is("archived_at", null)
-            .eq("exposure", "outdoor");
-          const toUpdate = (outdoorPlants ?? []).filter(
-            (p) => !p.rain_delay_until || p.rain_delay_until < delayUntil,
-          );
-          if (toUpdate.length > 0) {
-            await supabase
-              .from("plants")
-              .update({ rain_delay_until: delayUntil })
-              .in(
-                "id",
-                toUpdate.map((p) => p.id),
-              );
-            await load();
-            toast.success(
-              `🌧 ${wx.rainfallInchesLast24h}" of rain — snoozed ${toUpdate.length} outdoor plant${toUpdate.length === 1 ? "" : "s"} for 48h`,
-            );
-          }
-        }
-      } catch (e) {
-        console.warn("Weather check failed:", e);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.zip]);
+    supabase
+      .from("family_weather")
+      .select("rainfall_24h")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setRainfall(Number(data.rainfall_24h));
+      });
+  }, []);
 
   const dueToday = useMemo(() => plants.filter(needsWateringToday), [plants]);
+  const moves = useMemo(() => plants.filter((p) => p.move_suggestion), [plants]);
+
+  const handleMoved = async (plant: Plant) => {
+    const next = moveTarget(plant);
+    let schedule: Partial<Pick<Plant, "watering_frequency_days" | "watering_volume" | "next_watering_date">> = {};
+    try {
+      const rec = await recalibrateFn({
+        data: {
+          name: plant.name,
+          exposure: next,
+          pot_size: plant.pot_size,
+          establishment_level: plant.establishment_level,
+          city: profile?.city ?? null,
+        },
+      });
+      schedule = {
+        watering_frequency_days: rec.watering_frequency_days,
+        watering_volume: rec.watering_volume_ml,
+        next_watering_date: nextWateringFrom(plant.last_watered_date, rec.watering_frequency_days),
+      };
+    } catch {
+      toast.warning("Couldn't recalibrate — kept current watering schedule");
+    }
+    const patch = {
+      exposure: next,
+      location: next === "indoor" ? ("indoor" as const) : ("outdoor" as const),
+      rain_delay_until: next === "outdoor" ? plant.rain_delay_until : null,
+      ...schedule,
+      ...exposureTrackingPatch(plant, next),
+    };
+    const { error } = await supabase.from("plants").update(patch).eq("id", plant.id);
+    if (error) {
+      toast.error("Could not save the move");
+      return;
+    }
+    toast.success(`${plant.name} moved ${next === "indoor" ? "inside" : "out"} 🪴`);
+    setPlants((prev) => prev.map((p) => (p.id === plant.id ? { ...p, ...patch } : p)));
+  };
 
   const handleWater = async (plant: Plant) => {
     const today = todayISO();
@@ -144,7 +150,7 @@ function Dashboard() {
             <CloudRain className="h-4 w-4" />
             <p className="text-sm font-medium">
               {rainfall}" of rain in the last 24h
-              {rainfall > 0.5 && " — outdoor plants snoozed"}
+              {rainfall >= 0.25 && " — outdoor plants snoozed"}
             </p>
           </div>
         )}
@@ -160,7 +166,7 @@ function Dashboard() {
               <div key={i} className="h-32 animate-pulse rounded-xl bg-muted" />
             ))}
           </div>
-        ) : dueToday.length === 0 ? (
+        ) : dueToday.length === 0 && moves.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card py-12 text-center">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-leaf-soft">
               <Sprout className="h-6 w-6 text-leaf" />
@@ -170,6 +176,9 @@ function Dashboard() {
           </div>
         ) : (
           <div className="space-y-3">
+            {moves.map((p) => (
+              <MoveTaskCard key={`move-${p.id}`} plant={p} onMoved={handleMoved} />
+            ))}
             {dueToday.map((p) => (
               <PlantCard key={p.id} plant={p} onWater={handleWater} />
             ))}

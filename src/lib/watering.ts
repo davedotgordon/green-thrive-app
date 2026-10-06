@@ -54,3 +54,31 @@ export async function deletePlantForever(plantId: string) {
   const { error } = await supabase.from("plants").delete().eq("id", plantId);
   if (error) throw error;
 }
+
+/**
+ * Fields to write whenever a plant changes exposure: remembers its outdoor spot
+ * when it comes inside, restores nothing automatically, and clears any pending move task.
+ */
+export function exposureTrackingPatch(
+  plant: Pick<Plant, "exposure" | "outdoor_exposure">,
+  next: Plant["exposure"],
+) {
+  return {
+    outdoor_exposure:
+      next === "indoor"
+        ? plant.exposure !== "indoor"
+          ? plant.exposure
+          : (plant.outdoor_exposure ?? null)
+        : null,
+    move_suggestion: null,
+    move_reason: null,
+    move_suggested_date: null,
+  };
+}
+
+/** Target exposure for a pending move task. */
+export function moveTarget(plant: Pick<Plant, "move_suggestion" | "outdoor_exposure">) {
+  return plant.move_suggestion === "indoor"
+    ? ("indoor" as const)
+    : (plant.outdoor_exposure ?? "outdoor");
+}

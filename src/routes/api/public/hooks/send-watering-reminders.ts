@@ -120,7 +120,7 @@ export const Route = createFileRoute("/api/public/hooks/send-watering-reminders"
 
           const { data: plants } = await supabase
             .from("plants")
-            .select("name, next_watering_date, rain_delay_until")
+            .select("name, next_watering_date, rain_delay_until, move_suggestion")
             .is("archived_at", null)
             .eq("family_id", profile.family_id);
 
@@ -129,8 +129,10 @@ export const Route = createFileRoute("/api/public/hooks/send-watering-reminders"
               (!p.rain_delay_until || p.rain_delay_until < date) &&
               (!p.next_watering_date || p.next_watering_date <= date),
           );
+          const moveIn = (plants ?? []).filter((p) => p.move_suggestion === "indoor");
+          const moveOut = (plants ?? []).filter((p) => p.move_suggestion === "outdoor");
 
-          if (due.length === 0) {
+          if (due.length === 0 && moveIn.length === 0 && moveOut.length === 0) {
             await supabase
               .from("push_subscriptions")
               .update({ last_sent_date: date })
@@ -139,16 +141,31 @@ export const Route = createFileRoute("/api/public/hooks/send-watering-reminders"
             continue;
           }
 
-          const names = due
-            .slice(0, 3)
-            .map((p) => p.name)
-            .join(", ");
-          const extra = due.length > 3 ? ` +${due.length - 3} more` : "";
+          const listNames = (arr: { name: string }[]) =>
+            arr.slice(0, 3).map((p) => p.name).join(", ") +
+            (arr.length > 3 ? ` +${arr.length - 3} more` : "");
+
+          const titleParts: string[] = [];
+          const bodyParts: string[] = [];
+          if (moveIn.length) {
+            titleParts.push(`❄️ Bring ${moveIn.length} inside`);
+            bodyParts.push(`Cold coming — move inside: ${listNames(moveIn)}`);
+          }
+          if (moveOut.length) {
+            titleParts.push(`🌱 ${moveOut.length} can go out`);
+            bodyParts.push(`Warm week — move back out: ${listNames(moveOut)}`);
+          }
+          if (due.length) {
+            titleParts.push(
+              `${due.length} plant${due.length === 1 ? "" : "s"} need${due.length === 1 ? "s" : ""} water`,
+            );
+            bodyParts.push(`Water: ${listNames(due)}`);
+          }
 
           try {
             const status = await sendWebPush(sub, {
-              title: `${due.length} plant${due.length === 1 ? "" : "s"} need${due.length === 1 ? "s" : ""} water today`,
-              body: `${names}${extra}`,
+              title: titleParts.join(" · "),
+              body: bodyParts.join("\n"),
               url: "/",
               tag: "watering-reminder",
             });

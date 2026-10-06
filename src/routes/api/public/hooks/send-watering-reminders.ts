@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { sendWebPush } from "@/lib/webpush.server";
+import { runFamilyWeather } from "@/lib/weatherJob.server";
 
 function localParts(timezone: string): { hour: number; date: string } {
   const now = new Date();

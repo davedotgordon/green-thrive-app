@@ -27,7 +27,7 @@ import {
   type Plant,
   type PlantExposure,
 } from "@/lib/plants";
-import { archivePlant, markPlantWatered, restorePlant } from "@/lib/watering";
+import { archivePlant, markPlantWatered, restorePlant, exposureTrackingPatch } from "@/lib/watering";
 import { ArchivePlantDialog } from "@/components/ArchivePlantDialog";
 import { WateringIntensityLabel } from "@/components/WateringIntensityLabel";
 import { recalibratePlant } from "@/utils/recalibratePlant.functions";
@@ -113,6 +113,7 @@ function PlantDetail() {
           // Outdoor plants might already have a rain delay — clear when the
           // user explicitly moves them inside/porch.
           rain_delay_until: next === "outdoor" ? plant.rain_delay_until : null,
+          ...exposureTrackingPatch(plant, next),
         })
         .eq("id", plant.id);
 
@@ -130,6 +131,7 @@ function PlantDetail() {
         watering_volume: rec.watering_volume_ml,
         next_watering_date: recomputedNext,
         rain_delay_until: next === "outdoor" ? plant.rain_delay_until : null,
+        ...exposureTrackingPatch(plant, next),
       });
       toast.success(rec.rationale || "Schedule recalibrated");
     } catch (err) {
@@ -140,6 +142,7 @@ function PlantDetail() {
         .update({
           exposure: next,
           location: next === "indoor" ? "indoor" : "outdoor",
+          ...exposureTrackingPatch(plant, next),
         })
         .eq("id", plant.id);
       if (error) {

@@ -69,7 +69,7 @@ function Dashboard() {
 
   const handleMoved = async (plant: Plant) => {
     const next = moveTarget(plant);
-    let schedule: Partial<Plant> = {};
+    let schedule: Partial<Pick<Plant, "watering_frequency_days" | "watering_volume" | "next_watering_date">> = {};
     try {
       const rec = await recalibrateFn({
         data: {

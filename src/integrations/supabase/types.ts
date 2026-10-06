@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      family_weather: {
+        Row: {
+          checked_date: string
+          city: string | null
+          family_id: string
+          forecast: Json
+          rainfall_24h: number
+          updated_at: string
+        }
+        Insert: {
+          checked_date: string
+          city?: string | null
+          family_id: string
+          forecast?: Json
+          rainfall_24h?: number
+          updated_at?: string
+        }
+        Update: {
+          checked_date?: string
+          city?: string | null
+          family_id?: string
+          forecast?: Json
+          rainfall_24h?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plants: {
         Row: {
           ai_care_instructions: string | null
@@ -27,8 +54,13 @@ export type Database = {
           image_url: string | null
           last_watered_date: string | null
           location: Database["public"]["Enums"]["plant_location"]
+          min_temp_f: number | null
+          move_reason: string | null
+          move_suggested_date: string | null
+          move_suggestion: string | null
           name: string
           next_watering_date: string | null
+          outdoor_exposure: Database["public"]["Enums"]["plant_exposure"] | null
           pot_size: Database["public"]["Enums"]["pot_size"]
           rain_delay_until: string | null
           updated_at: string
@@ -47,8 +79,15 @@ export type Database = {
           image_url?: string | null
           last_watered_date?: string | null
           location?: Database["public"]["Enums"]["plant_location"]
+          min_temp_f?: number | null
+          move_reason?: string | null
+          move_suggested_date?: string | null
+          move_suggestion?: string | null
           name: string
           next_watering_date?: string | null
+          outdoor_exposure?:
+            | Database["public"]["Enums"]["plant_exposure"]
+            | null
           pot_size?: Database["public"]["Enums"]["pot_size"]
           rain_delay_until?: string | null
           updated_at?: string
@@ -67,8 +106,15 @@ export type Database = {
           image_url?: string | null
           last_watered_date?: string | null
           location?: Database["public"]["Enums"]["plant_location"]
+          min_temp_f?: number | null
+          move_reason?: string | null
+          move_suggested_date?: string | null
+          move_suggestion?: string | null
           name?: string
           next_watering_date?: string | null
+          outdoor_exposure?:
+            | Database["public"]["Enums"]["plant_exposure"]
+            | null
           pot_size?: Database["public"]["Enums"]["pot_size"]
           rain_delay_until?: string | null
           updated_at?: string

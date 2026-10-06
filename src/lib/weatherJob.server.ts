@@ -28,12 +28,21 @@ function weekday(iso: string) {
 }
 
 async function fetchWeather(zip: string) {
-  const geoRes = await fetch(
-    `https://geocoding-api.open-meteo.com/v1/search?name=${zip}&country=US&count=1&language=en&format=json`,
-  );
-  if (!geoRes.ok) throw new Error(`Geocoding failed (${geoRes.status})`);
-  const geo = await geoRes.json();
-  const r = geo?.results?.[0];
+  // Zippopotam handles every US ZIP; Open-Meteo's name search misses many.
+  let r: { latitude: number; longitude: number; name: string | null } | null = null;
+  const zRes = await fetch(`https://api.zippopotam.us/us/${zip}`);
+  if (zRes.ok) {
+    const z = await zRes.json();
+    const pl = z?.places?.[0];
+    if (pl) r = { latitude: Number(pl.latitude), longitude: Number(pl.longitude), name: pl["place name"] ?? null };
+  }
+  if (!r) {
+    const geoRes = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${zip}&country=US&count=1&language=en&format=json`,
+    );
+    const g = geoRes.ok ? (await geoRes.json())?.results?.[0] : null;
+    if (g) r = { latitude: g.latitude, longitude: g.longitude, name: g.name ?? null };
+  }
   if (!r) throw new Error(`Could not locate ZIP ${zip}`);
 
   const wxRes = await fetch(

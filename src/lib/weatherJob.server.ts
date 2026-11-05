@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { callGemini } from "./gemini.server";
 
 type Admin = SupabaseClient<Database>;
 
@@ -79,14 +80,8 @@ async function fetchWeather(zip: string) {
 
 /** Ask Gemini for the minimum safe overnight temperature (°F) for each plant name. */
 async function estimateMinTemps(names: string[]): Promise<Record<string, number>> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || names.length === 0) return {};
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+  if (names.length === 0) return {};
+  const res = await callGemini({
         contents: [
           {
             role: "user",
@@ -110,9 +105,7 @@ async function estimateMinTemps(names: string[]): Promise<Record<string, number>
             },
           },
         },
-      }),
-    },
-  );
+  });
   if (!res.ok) {
     console.error("Gemini min temp error", res.status, await res.text().catch(() => ""));
     return {};

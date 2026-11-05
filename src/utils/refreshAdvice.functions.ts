@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { callGemini } from "@/lib/gemini.server";
 
 interface Input {
   name: string;
@@ -22,12 +23,6 @@ export const refreshAdvice = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }): Promise<{ care_instructions: string }> => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
-
-    const model = "gemini-flash-latest";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
     const cityCtx = data.city ? `the user's location: ${data.city}` : "a generic temperate-humid US climate";
     const ctxBits = [
       data.exposure ? `living ${data.exposure}` : null,
@@ -39,10 +34,7 @@ export const refreshAdvice = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join(", ");
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const response = await callGemini({
         systemInstruction: {
           parts: [
             {
@@ -68,7 +60,6 @@ export const refreshAdvice = createServerFn({ method: "POST" })
             required: ["care_instructions"],
           },
         },
-      }),
     });
 
     if (!response.ok) {

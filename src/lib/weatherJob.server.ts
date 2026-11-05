@@ -107,7 +107,11 @@ async function estimateMinTemps(names: string[]): Promise<Record<string, number>
             },
           },
         },
-  });
+    });
+  } catch (e) {
+    console.error("Gemini min temp call failed", e);
+    return {};
+  }
   if (!res.ok) {
     console.error("Gemini min temp error", res.status, await res.text().catch(() => ""));
     return {};

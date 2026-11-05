@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { callGemini } from "@/lib/gemini.server";
 
 export interface IdentifiedPlant {
   name: string;
@@ -29,14 +30,6 @@ export const identifyPlant = createServerFn({ method: "POST" })
     return { imageBase64: base64, mimeType: input.mimeType, city: input.city ?? null };
   })
   .handler(async ({ data }): Promise<IdentifiedPlant> => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY is not configured");
-    }
-
-    const model = "gemini-flash-latest";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
     const cityCtx = data.city
       ? `the user's location: ${data.city}`
       : "a generic temperate-humid US climate";
@@ -48,13 +41,9 @@ export const identifyPlant = createServerFn({ method: "POST" })
       mimeType: data.mimeType,
       base64Length: data.imageBase64.length,
       city: data.city,
-      model,
     });
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const response = await callGemini({
         systemInstruction: {
           parts: [
             {
@@ -103,7 +92,6 @@ export const identifyPlant = createServerFn({ method: "POST" })
             ],
           },
         },
-      }),
     });
 
     if (!response.ok) {

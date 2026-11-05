@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { callGemini } from "@/lib/gemini.server";
 
 export interface Recalibration {
   watering_frequency_days: number;
@@ -30,12 +31,6 @@ export const recalibratePlant = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }): Promise<Recalibration> => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
-
-    const model = "gemini-flash-latest";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
     const cityCtx = data.city
       ? `the user's city: ${data.city}`
       : "a generic temperate-humid US climate";
@@ -47,10 +42,7 @@ export const recalibratePlant = createServerFn({ method: "POST" })
           ? "on a covered porch (sheltered from rain)"
           : "fully outdoors and exposed to rain & sun";
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const response = await callGemini({
         systemInstruction: {
           parts: [
             {
@@ -80,7 +72,6 @@ export const recalibratePlant = createServerFn({ method: "POST" })
             required: ["watering_frequency_days", "watering_volume_ml", "rationale"],
           },
         },
-      }),
     });
 
     if (!response.ok) {

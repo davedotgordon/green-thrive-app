@@ -81,7 +81,9 @@ async function fetchWeather(zip: string) {
 /** Ask Gemini for the minimum safe overnight temperature (°F) for each plant name. */
 async function estimateMinTemps(names: string[]): Promise<Record<string, number>> {
   if (names.length === 0) return {};
-  const res = await callGemini({
+  let res: Response;
+  try {
+    res = await callGemini({
         contents: [
           {
             role: "user",
